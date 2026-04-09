@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { NAV } from "../app/config/nav";
+import { NAV } from "../config/nav";
 
 type NavbarProps = {
   variant?: "light" | "dark";
