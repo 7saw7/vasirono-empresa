@@ -39,6 +39,11 @@ export type ReviewFilters = {
   validated?: boolean;
 };
 
+export type ReviewsPayload = {
+  reviews: ReviewItem[];
+  metrics: ReviewMetrics | null;
+};
+
 export type UpsertReviewResponseInput = {
   responseText: string;
 };

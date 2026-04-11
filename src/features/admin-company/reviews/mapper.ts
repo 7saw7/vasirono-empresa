@@ -1,4 +1,9 @@
-import type { ReviewItem, ReviewMetrics, ReviewResponse } from "./types";
+import type {
+  ReviewItem,
+  ReviewMetrics,
+  ReviewResponse,
+  ReviewsPayload,
+} from "./types";
 
 export function mapReviewResponse(raw: {
   id: number;
@@ -68,8 +73,18 @@ export function mapReviewMetrics(raw: {
 }): ReviewMetrics {
   return {
     totalReviews: raw.total_reviews,
-    averageRating: raw.average_rating,
-    responseRate: raw.response_rate,
-    validatedRate: raw.validated_rate,
+    averageRating: Number(raw.average_rating ?? 0),
+    responseRate: Number(raw.response_rate ?? 0),
+    validatedRate: Number(raw.validated_rate ?? 0),
+  };
+}
+
+export function mapReviewsPayload(raw: {
+  reviews: Array<Parameters<typeof mapReviewItem>[0]>;
+  metrics: Parameters<typeof mapReviewMetrics>[0] | null;
+}): ReviewsPayload {
+  return {
+    reviews: raw.reviews.map(mapReviewItem),
+    metrics: raw.metrics ? mapReviewMetrics(raw.metrics) : null,
   };
 }

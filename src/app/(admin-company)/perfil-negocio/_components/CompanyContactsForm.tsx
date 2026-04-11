@@ -3,41 +3,47 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { CompanyContactItem } from "@/features/admin-company/company/types";
 
 export function CompanyContactsForm({
-  items,
+  contacts,
 }: {
-  items: CompanyContactItem[];
+  contacts: CompanyContactItem[];
 }) {
   return (
     <SectionCard
-      title="Contactos corporativos"
-      description="Canales visibles del negocio."
+      title="Contactos públicos"
+      description="Canales visibles y configurados para el negocio."
     >
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col gap-3 rounded-2xl border border-neutral-200 p-4 md:flex-row md:items-center md:justify-between"
-          >
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">
-                {item.typeLabel}
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">{item.value}</p>
-            </div>
+      {contacts.length === 0 ? (
+        <p className="text-sm text-neutral-500">
+          Aún no hay contactos registrados para este negocio.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {contacts.map((contact) => (
+            <div
+              key={contact.id}
+              className="rounded-2xl border border-neutral-200 p-4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold text-neutral-950">
+                  {contact.typeLabel}
+                </h3>
 
-            <div className="flex flex-wrap gap-2">
-              {item.isPrimary ? (
-                <StatusBadge label="Principal" tone="info" />
-              ) : null}
-              {item.isPublic ? (
-                <StatusBadge label="Público" tone="success" />
-              ) : (
-                <StatusBadge label="Privado" />
-              )}
+                {contact.isPrimary ? (
+                  <StatusBadge label="Principal" tone="info" />
+                ) : null}
+
+                {contact.isPublic ? (
+                  <StatusBadge label="Público" tone="success" />
+                ) : (
+                  <StatusBadge label="Interno" tone="default" />
+                )}
+              </div>
+
+              <p className="mt-2 text-sm text-neutral-600">{contact.value}</p>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </SectionCard>
   );
 }

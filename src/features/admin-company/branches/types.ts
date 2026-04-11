@@ -1,11 +1,12 @@
 export type BranchListItem = {
   branchId: number;
-  companyId: number;
+  companyId: string;
   name: string;
   description: string;
   address: string;
   phone: string;
   email: string;
+  districtId?: number | null;
   districtName: string;
   isMain: boolean;
   isActive: boolean;
@@ -68,4 +69,9 @@ export type UpsertBranchInput = {
   districtId: number;
   isMain: boolean;
   isActive: boolean;
+};
+
+export type BranchDistrictOption = {
+  id: number;
+  name: string;
 };

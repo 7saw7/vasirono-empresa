@@ -1,7 +1,7 @@
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatDateTime } from "@/lib/utils/dates";
 import type { DashboardVerificationSummary } from "@/features/admin-company/dashboard/types";
+import { formatDateTime } from "@/lib/utils/dates";
 
 export function VerificationSummaryCard({
   summary,
@@ -17,6 +17,14 @@ export function VerificationSummaryCard({
       </SectionCard>
     );
   }
+
+  const progress =
+    summary.checksTotal > 0
+      ? Math.min(
+          100,
+          Math.round((summary.checksCompleted / summary.checksTotal) * 100)
+        )
+      : 0;
 
   return (
     <SectionCard
@@ -59,6 +67,19 @@ export function VerificationSummaryCard({
                 ? formatDateTime(summary.lastReviewAt)
                 : "—"}
             </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-neutral-500">
+            <span>Progreso</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+            <div
+              className="h-full rounded-full bg-neutral-900 transition-all"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
       </div>

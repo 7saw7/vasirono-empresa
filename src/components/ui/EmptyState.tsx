@@ -1,30 +1,28 @@
-import { Button } from "./Button";
+import type { ReactNode } from "react";
+import { SectionCard } from "./SectionCard";
+
+type EmptyStateProps = {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+};
 
 export function EmptyState({
   title,
   description,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
+  action,
+}: EmptyStateProps) {
   return (
-    <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
-      <h3 className="text-lg font-semibold text-neutral-900">{title}</h3>
-      <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500">
-        {description}
-      </p>
+    <SectionCard className="text-center">
+      <div className="mx-auto max-w-md space-y-3 py-6">
+        <h3 className="text-lg font-semibold text-neutral-950">{title}</h3>
 
-      {actionLabel && onAction ? (
-        <div className="mt-5">
-          <Button variant="secondary" onClick={onAction}>
-            {actionLabel}
-          </Button>
-        </div>
-      ) : null}
-    </div>
+        {description ? (
+          <p className="text-sm leading-6 text-neutral-500">{description}</p>
+        ) : null}
+
+        {action ? <div className="pt-2">{action}</div> : null}
+      </div>
+    </SectionCard>
   );
 }

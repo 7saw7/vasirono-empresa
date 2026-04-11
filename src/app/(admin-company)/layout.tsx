@@ -1,12 +1,18 @@
-import { AdminCompanyShell } from "@/components/layout/AdminCompanyShell";
-import { requireAdminCompanyAccess } from "@/lib/auth/guards";
+import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { requireSession } from "@/lib/auth/session";
+import AdminCompanyShell from "@/components/layout/AdminCompanyShell";
 
 export default async function AdminCompanyLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  await requireAdminCompanyAccess();
+  const session = await requireSession();
+
+  if (!session.companyId) {
+    redirect("/login");
+  }
 
   return <AdminCompanyShell>{children}</AdminCompanyShell>;
 }

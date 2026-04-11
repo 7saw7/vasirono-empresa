@@ -1,66 +1,59 @@
 export type VerificationStatusSummary = {
-  levelLabel: string;
+  level: string;
   statusLabel: string;
   statusTone: "default" | "success" | "warning" | "danger" | "info";
   score: number;
-  verifiedAt: string | null;
-  expiresAt: string | null;
+  lastReviewAt: string | null;
+  checksCompleted: number;
+  checksTotal: number;
+};
+
+export type VerificationCheckItem = {
+  id: number;
+  code: string;
+  label: string;
+  statusLabel: string;
+  statusTone: "default" | "success" | "warning" | "danger" | "info";
+  notes: string | null;
+  reviewedAt: string | null;
+};
+
+export type VerificationDocumentItem = {
+  id: number;
+  typeLabel: string;
+  fileName: string;
+  fileUrl: string;
+  statusLabel: string;
+  uploadedAt: string | null;
+};
+
+export type VerificationContactItem = {
+  id: number;
+  contactType: string;
+  value: string;
+  sourceLabel: string;
+  matchesCompany: boolean;
+};
+
+export type VerificationAddressMatchItem = {
+  sourceLabel: string;
+  addressValue: string;
+  matchesCompany: boolean;
 };
 
 export type VerificationTimelineItem = {
   id: string;
   title: string;
   description: string;
-  date: string;
+  createdAt: string;
+  type: "document" | "review" | "contact" | "address" | "system";
 };
 
-export type VerificationCheckItem = {
-  id: number;
-  methodName: string;
-  statusLabel: string;
-  statusTone: "default" | "success" | "warning" | "danger" | "info";
-  score: number;
-  confidenceScore: number;
-  branchName: string | null;
-  verifiedAt: string | null;
-};
-
-export type VerificationDocumentItem = {
-  id: number;
-  fileName: string;
-  documentType: string;
-  reviewStatusLabel: string;
-  reviewStatusTone: "default" | "success" | "warning" | "danger" | "info";
-  uploadedAt: string;
-  extractedName: string | null;
-  extractedAddress: string | null;
-};
-
-export type VerificationContactItem = {
-  id: number;
-  source: string;
-  contactLabel: string | null;
-  contactValue: string;
-  matchedWithBranchContact: boolean;
-  verifiedAt: string | null;
-};
-
-export type VerificationAddressMatchItem = {
-  id: number;
-  sourceType: string;
-  declaredAddress: string;
-  extractedAddress: string | null;
-  branchAddress: string | null;
-  matched: boolean;
-  confidenceScore: number;
-  distanceMeters: number | null;
-};
-
-export type VerificationOverview = {
-  summary: VerificationStatusSummary;
-  timeline: VerificationTimelineItem[];
+export type CompanyVerificationData = {
+  summary: VerificationStatusSummary | null;
   checks: VerificationCheckItem[];
   documents: VerificationDocumentItem[];
   contacts: VerificationContactItem[];
   addressMatches: VerificationAddressMatchItem[];
+  timeline: VerificationTimelineItem[];
 };

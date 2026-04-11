@@ -1,8 +1,8 @@
 import Link from "next/link";
+import type { DashboardBranchPerformanceItem } from "@/features/admin-company/dashboard/types";
+import { formatNumber } from "@/lib/utils/numbers";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatNumber } from "@/lib/utils/numbers";
-import type { DashboardBranchPerformanceItem } from "@/features/admin-company/dashboard/types";
 
 export function BranchPerformanceTable({
   items,
@@ -32,7 +32,7 @@ export function BranchPerformanceTable({
         row.isMain ? (
           <StatusBadge label="Principal" tone="info" />
         ) : (
-          <StatusBadge label="Secundaria" />
+          <StatusBadge label="Secundaria" tone="default" />
         ),
     },
     {
@@ -57,5 +57,19 @@ export function BranchPerformanceTable({
     },
   ];
 
-  return <DataTable columns={columns} data={items} rowKey={(row) => String(row.branchId)} />;
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-neutral-500">
+        Aún no hay sucursales con métricas para mostrar.
+      </p>
+    );
+  }
+
+  return (
+    <DataTable<DashboardBranchPerformanceItem>
+      columns={columns}
+      data={items}
+      getRowKey={(row) => String(row.branchId)}
+    />
+  );
 }

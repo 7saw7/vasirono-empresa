@@ -1,28 +1,23 @@
-import { cn } from "@/lib/utils/cn";
+import { SectionCard } from "./SectionCard";
 
-export function StatCard({
-  label,
-  value,
-  helper,
-  className,
-}: {
+type StatCardProps = {
   label: string;
   value: string;
   helper?: string;
-  className?: string;
-}) {
+};
+
+export function StatCard({ label, value, helper }: StatCardProps) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm",
-        className
-      )}
-    >
-      <p className="text-sm text-neutral-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950">
+    <SectionCard className="p-5">
+      <p className="text-xs uppercase tracking-wide text-neutral-500">
+        {label}
+      </p>
+      <p className="mt-2 text-3xl font-semibold tracking-tight text-neutral-950">
         {value}
       </p>
-      {helper ? <p className="mt-2 text-xs text-neutral-500">{helper}</p> : null}
-    </div>
+      {helper ? (
+        <p className="mt-2 text-sm text-neutral-500">{helper}</p>
+      ) : null}
+    </SectionCard>
   );
 }

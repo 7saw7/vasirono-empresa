@@ -1,20 +1,7 @@
-import type {
-  VerificationAddressMatchItem,
-  VerificationCheckItem,
-  VerificationContactItem,
-  VerificationDocumentItem,
-  VerificationOverview,
-  VerificationStatusSummary,
-  VerificationTimelineItem,
-} from "./types";
+import type { CompanyVerificationData } from "./types";
 
-export function mapVerificationOverview(raw: {
-  summary: VerificationStatusSummary;
-  timeline: VerificationTimelineItem[];
-  checks: VerificationCheckItem[];
-  documents: VerificationDocumentItem[];
-  contacts: VerificationContactItem[];
-  addressMatches: VerificationAddressMatchItem[];
-}): VerificationOverview {
+export function mapVerificationOverview(
+  raw: CompanyVerificationData
+): CompanyVerificationData {
   return raw;
 }

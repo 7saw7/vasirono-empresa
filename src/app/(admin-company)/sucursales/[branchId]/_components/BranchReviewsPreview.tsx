@@ -1,16 +1,29 @@
+import Link from "next/link";
 import { SectionCard } from "@/components/ui/SectionCard";
+import type { BranchDetail } from "@/features/admin-company/branches/types";
 
-export function BranchReviewsPreview() {
+export function BranchReviewsPreview({
+  branch,
+}: {
+  branch: BranchDetail;
+}) {
   return (
     <SectionCard
-      title="Vista previa de reseñas"
-      description="Esta sección se conectará con el dominio de reseñas en la siguiente fase."
+      title="Reseñas"
+      description="Accede a las reseñas relacionadas con esta sucursal desde el módulo central."
     >
-      <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-6">
-        <p className="text-sm text-neutral-500">
-          Aquí mostraremos las reseñas recientes de la sucursal, su estado de
-          respuesta y accesos rápidos al módulo de reputación.
+      <div className="space-y-3">
+        <p className="text-sm text-neutral-600">
+          La gestión de reseñas se centraliza en el módulo de reseñas del panel
+          empresarial.
         </p>
+
+        <Link
+          href={`/resenias?branchId=${branch.branchId}`}
+          className="inline-flex text-sm font-medium text-neutral-950 hover:underline"
+        >
+          Ver reseñas de esta sucursal
+        </Link>
       </div>
     </SectionCard>
   );

@@ -1,36 +1,108 @@
 import { NextResponse } from "next/server";
-import { AppError, isAppError } from "@/lib/errors/app-error";
-import { fail } from "./api-response";
+import { ZodError } from "zod";
+import { AppError } from "@/lib/errors/app-error";
+import { logger } from "@/lib/observability/logger";
 
-export async function handleRoute<T>(handler: () => Promise<T>) {
-  try {
-    const data = await handler();
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    if (isAppError(error)) {
-      return NextResponse.json(
-        fail(error.code, error.message, error.details),
-        { status: error.status }
-      );
+type RouteHandlerResult = unknown | Promise<unknown>;
+
+type ErrorResponseBody = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+};
+
+type SuccessResponseBody = {
+  success: true;
+  data: unknown;
+};
+
+function normalizeZodError(error: ZodError) {
+  const fieldErrors: Record<string, string[]> = {};
+
+  for (const issue of error.issues) {
+    const path = issue.path.join(".") || "root";
+
+    if (!fieldErrors[path]) {
+      fieldErrors[path] = [];
     }
 
-    console.error("[API_ERROR]", error);
-
-    return NextResponse.json(
-      fail("INTERNAL_ERROR", "Ocurrió un error interno inesperado."),
-      { status: 500 }
-    );
+    fieldErrors[path].push(issue.message);
   }
+
+  return fieldErrors;
 }
 
-export function assertOrThrow(
-  condition: unknown,
-  error: AppError
-): asserts condition {
-  if (!condition) {
-    throw error;
+function toErrorResponse(error: unknown): {
+  body: ErrorResponseBody;
+  status: number;
+} {
+  if (error instanceof AppError) {
+    return {
+      status: error.status,
+      body: {
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+          ...(error.details !== undefined ? { details: error.details } : {}),
+        },
+      },
+    };
+  }
+
+  if (error instanceof ZodError) {
+    return {
+      status: 422,
+      body: {
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "La solicitud no es válida.",
+          details: normalizeZodError(error),
+        },
+      },
+    };
+  }
+
+  return {
+    status: 500,
+    body: {
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Ocurrió un error interno.",
+      },
+    },
+  };
+}
+
+export async function handleRoute(
+  handler: () => RouteHandlerResult
+): Promise<NextResponse<SuccessResponseBody | ErrorResponseBody>> {
+  try {
+    const data = await handler();
+
+    return NextResponse.json(
+      {
+        success: true,
+        data,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const response = toErrorResponse(error);
+
+    logger.error("route_handler_failed", error, {
+      status: response.status,
+      code:
+        response.body.success === false ? response.body.error.code : undefined,
+    });
+
+    return NextResponse.json(response.body, {
+      status: response.status,
+    });
   }
 }

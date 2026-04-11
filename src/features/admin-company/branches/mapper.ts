@@ -9,12 +9,13 @@ import type {
 
 export function mapBranchListItem(raw: {
   branch_id: number;
-  company_id: number;
+  company_id: string;
   name: string;
   description?: string | null;
   address: string;
   phone?: string | null;
   email?: string | null;
+  district_id?: number | null;
   district_name: string;
   is_main: boolean;
   is_active: boolean;
@@ -30,6 +31,7 @@ export function mapBranchListItem(raw: {
     address: raw.address,
     phone: raw.phone ?? "",
     email: raw.email ?? "",
+    districtId: raw.district_id ?? null,
     districtName: raw.district_name,
     isMain: raw.is_main,
     isActive: raw.is_active,
@@ -101,12 +103,13 @@ export function mapBranchMediaItem(raw: {
 
 export function mapBranchDetail(raw: {
   branch_id: number;
-  company_id: number;
+  company_id: string;
   name: string;
   description?: string | null;
   address: string;
   phone?: string | null;
   email?: string | null;
+  district_id?: number | null;
   district_name: string;
   is_main: boolean;
   is_active: boolean;

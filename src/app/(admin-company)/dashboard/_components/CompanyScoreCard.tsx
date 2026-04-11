@@ -1,5 +1,6 @@
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { DashboardCompanyScore } from "@/features/admin-company/dashboard/types";
+import { formatDateTime } from "@/lib/utils/dates";
 
 export function CompanyScoreCard({
   score,
@@ -30,20 +31,26 @@ export function CompanyScoreCard({
       title="Score empresarial"
       description="Resumen consolidado de desempeño y calidad."
     >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"
-          >
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
-              {item.label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-950">
-              {item.value.toFixed(1)}
-            </p>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"
+            >
+              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                {item.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-neutral-950">
+                {item.value.toFixed(1)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs text-neutral-400">
+          Último cálculo: {formatDateTime(score.calculatedAt)}
+        </p>
       </div>
     </SectionCard>
   );

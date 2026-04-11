@@ -1,11 +1,11 @@
 import { AdminCompanyHeader } from "@/components/layout/AdminCompanyHeader";
-import { KpiCard } from "./KpiCard";
-import { ActivityFeed } from "./ActivityFeed";
-import { CompanyScoreCard } from "./CompanyScoreCard";
-import { VerificationSummaryCard } from "./VerificationSummaryCard";
-import { BranchPerformanceTable } from "./BranchPerformanceTable";
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { DashboardData } from "@/features/admin-company/dashboard/types";
+import { ActivityFeed } from "./ActivityFeed";
+import { BranchPerformanceTable } from "./BranchPerformanceTable";
+import { CompanyScoreCard } from "./CompanyScoreCard";
+import { KpiCard } from "./KpiCard";
+import { VerificationSummaryCard } from "./VerificationSummaryCard";
 
 export function DashboardView({ data }: { data: DashboardData }) {
   return (

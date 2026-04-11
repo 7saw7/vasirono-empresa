@@ -1,21 +1,15 @@
-export type AppErrorCode =
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "BAD_REQUEST"
-  | "INTERNAL_ERROR";
+export type AppErrorDetails = Record<string, string[]> | undefined;
 
 export class AppError extends Error {
-  public readonly code: AppErrorCode;
+  public readonly code: string;
   public readonly status: number;
-  public readonly details?: unknown;
+  public readonly details?: AppErrorDetails;
 
   constructor(
-    code: AppErrorCode,
+    code: string,
     message: string,
-    status: number,
-    details?: unknown
+    status = 500,
+    details?: AppErrorDetails
   ) {
     super(message);
     this.name = "AppError";

@@ -1,21 +1,43 @@
-import { getSession } from "./session";
+import { AppError } from "@/lib/errors/app-error";
+import { requireSession } from "@/lib/auth/session";
+import {
+  hasPermission,
+  type AdminCompanyPermission,
+} from "@/lib/constants/permissions";
+import type { AppRole } from "@/lib/constants/roles";
 
 export type CompanyContext = {
-  companyId: number;
   userId: string;
-  role: string;
+  email: string;
+  companyId: number;
+  role: AppRole;
 };
 
-export async function getCompanyContext(): Promise<CompanyContext> {
-  const session = await getSession();
+export async function getCompanyContext(
+  requiredPermission?: AdminCompanyPermission
+): Promise<CompanyContext> {
+  const session = await requireSession();
 
-  if (!session?.user?.companyId) {
-    throw new Error("No se encontró el contexto de empresa.");
+  if (!session.companyId) {
+    throw new AppError(
+      "FORBIDDEN",
+      "No tienes una empresa asociada.",
+      403
+    );
+  }
+
+  if (requiredPermission && !hasPermission(session.role, requiredPermission)) {
+    throw new AppError(
+      "FORBIDDEN",
+      "No tienes permisos para realizar esta acción.",
+      403
+    );
   }
 
   return {
-    companyId: session.user.companyId,
-    userId: session.user.id,
-    role: session.user.role,
+    userId: session.userId,
+    email: session.email,
+    companyId: session.companyId, // ✅ ya es number
+    role: session.role,           // ✅ ya es AppRole
   };
 }

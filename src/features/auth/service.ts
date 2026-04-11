@@ -1,39 +1,48 @@
-import type { LoginInput, LoginResult } from "./types";
-import { validateLoginInput } from "./schema";
+import type { AuthUser, LoginInput } from "./types";
 
-export async function login(input: LoginInput): Promise<LoginResult> {
-  const validation = validateLoginInput(input);
+export async function loginService(input: LoginInput): Promise<AuthUser> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
 
-  if (!validation.success) {
-    throw new Error("Credenciales inválidas.");
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.error?.message || "No se pudo iniciar sesión.");
   }
 
-  /**
-   * Default temporal.
-   * Luego lo conectamos con tu endpoint real.
-   */
-  return {
-    user: {
-      id: "demo-user-id",
-      name: "Admin Empresa Demo",
-      email: input.email,
-      role: "company_admin",
-      companyId: 1,
-    },
-    token: "demo-token",
-  };
+  return payload.data.user as AuthUser;
 }
 
-export async function logout(): Promise<void> {
-  return;
+export async function logoutService(): Promise<void> {
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.error?.message || "No se pudo cerrar sesión.");
+  }
 }
 
-export async function getMe() {
-  return {
-    id: "demo-user-id",
-    name: "Admin Empresa Demo",
-    email: "empresa@vasirono.com",
-    role: "company_admin",
-    companyId: 1,
-  };
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const response = await fetch("/api/auth/me", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return null;
+
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.error?.message || "No se pudo obtener la sesión.");
+  }
+
+  return payload.data as AuthUser;
 }

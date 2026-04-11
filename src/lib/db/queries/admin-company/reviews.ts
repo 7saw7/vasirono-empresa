@@ -1,5 +1,4 @@
 import { getDb } from "@/lib/db/server";
-import { getCompanyContext } from "@/lib/auth/company-context";
 import { AppError } from "@/lib/errors/app-error";
 import { mapReviewItem, mapReviewMetrics, mapReviewResponse } from "@/features/admin-company/reviews/mapper";
 import type {
@@ -28,9 +27,11 @@ type ReviewRow = {
   responded_at: string | null;
 };
 
-export async function listReviewsQuery(filters: ReviewFilters = {}) {
+export async function listReviewsQuery(
+  companyId: number,
+  filters: ReviewFilters = {}
+) {
   const db = getDb();
-  const { companyId } = await getCompanyContext();
 
   const conditions: string[] = ["cb.company_id = $1"];
   const params: Array<string | number | boolean> = [companyId];
@@ -39,24 +40,22 @@ export async function listReviewsQuery(filters: ReviewFilters = {}) {
     params.push(`%${filters.search}%`);
     const index = params.length;
     conditions.push(
-      `(COALESCE(r.comment, '') ILIKE $${index} OR u.name ILIKE $${index} OR cb.name ILIKE $${index})`
+      `(COALESCE(r.comment, '') ILIKE $${index} OR COALESCE(u.name, '') ILIKE $${index} OR cb.name ILIKE $${index})`
     );
   }
 
-  if (filters.rating) {
+  if (typeof filters.rating === "number") {
     params.push(filters.rating);
     conditions.push(`r.rating = $${params.length}`);
   }
 
-  if (filters.branchId) {
+  if (typeof filters.branchId === "number") {
     params.push(filters.branchId);
     conditions.push(`r.branch_id = $${params.length}`);
   }
 
   if (typeof filters.responded === "boolean") {
-    conditions.push(
-      filters.responded ? "rr.id IS NOT NULL" : "rr.id IS NULL"
-    );
+    conditions.push(filters.responded ? "rr.id IS NOT NULL" : "rr.id IS NULL");
   }
 
   if (typeof filters.validated === "boolean") {
@@ -69,24 +68,24 @@ export async function listReviewsQuery(filters: ReviewFilters = {}) {
       r.id,
       r.branch_id,
       cb.name AS branch_name,
-      u.name AS user_name,
+      COALESCE(u.name, 'Usuario') AS user_name,
       r.rating,
       r.comment,
-      r.validated,
-      r.created_at::text,
+      COALESCE(r.validated, false) AS validated,
+      r.created_at::text AS created_at,
       rus.final_score AS usefulness_score,
       rus.likes_count,
       rus.dislikes_count,
       rus.media_count,
       rr.id AS response_id,
       rr.company_id AS response_company_id,
-      responder.name AS responder_name,
+      COALESCE(responder.name, 'Equipo empresa') AS responder_name,
       rr.response_text,
-      rrs.name AS response_status_label,
-      rr.responded_at::text
+      COALESCE(rrs.name, 'Respondida') AS response_status_label,
+      rr.responded_at::text AS responded_at
     FROM reviews r
     INNER JOIN company_branches cb ON cb.branch_id = r.branch_id
-    INNER JOIN users u ON u.id = r.user_id
+    LEFT JOIN users u ON u.id = r.user_id
     LEFT JOIN review_usefulness_scores rus ON rus.review_id = r.id
     LEFT JOIN review_responses rr ON rr.review_id = r.id
     LEFT JOIN users responder ON responder.id = rr.responder_user_id
@@ -127,16 +126,15 @@ export async function listReviewsQuery(filters: ReviewFilters = {}) {
   );
 }
 
-export async function getReviewMetricsQuery() {
+export async function getReviewMetricsQuery(companyId: number) {
   const db = getDb();
-  const { companyId } = await getCompanyContext();
 
   const sql = `
     WITH base AS (
       SELECT
         r.id,
         r.rating,
-        r.validated,
+        COALESCE(r.validated, false) AS validated,
         rr.id AS response_id
       FROM reviews r
       INNER JOIN company_branches cb ON cb.branch_id = r.branch_id
@@ -145,13 +143,19 @@ export async function getReviewMetricsQuery() {
     )
     SELECT
       COUNT(*)::int AS total_reviews,
-      COALESCE(AVG(rating), 0)::numeric AS average_rating,
+      COALESCE(ROUND(AVG(rating)::numeric, 2), 0)::numeric AS average_rating,
       COALESCE(
-        100.0 * SUM(CASE WHEN response_id IS NOT NULL THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0),
+        ROUND(
+          100.0 * SUM(CASE WHEN response_id IS NOT NULL THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0),
+          2
+        ),
         0
       )::numeric AS response_rate,
       COALESCE(
-        100.0 * SUM(CASE WHEN validated THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0),
+        ROUND(
+          100.0 * SUM(CASE WHEN validated THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0),
+          2
+        ),
         0
       )::numeric AS validated_rate
     FROM base
@@ -174,18 +178,25 @@ export async function getReviewMetricsQuery() {
   );
 }
 
-export async function upsertReviewResponseQuery(
-  reviewId: number,
-  input: UpsertReviewResponseInput
-) {
+export async function upsertReviewResponseQuery(params: {
+  companyId: number;
+  userId: string;
+  reviewId: number;
+  input: UpsertReviewResponseInput;
+}) {
   const db = getDb();
-  const { companyId, userId } = await getCompanyContext();
+  const { companyId, userId, reviewId, input } = params;
+
+  if (!Number.isInteger(reviewId) || reviewId <= 0) {
+    throw new AppError("VALIDATION_ERROR", "El reviewId es inválido.", 400);
+  }
 
   const reviewOwnershipSql = `
     SELECT r.id
     FROM reviews r
     INNER JOIN company_branches cb ON cb.branch_id = r.branch_id
-    WHERE r.id = $1 AND cb.company_id = $2
+      WHERE r.id = $1
+        AND cb.company_id = $2
     LIMIT 1
   `;
 
@@ -226,6 +237,7 @@ export async function upsertReviewResponseQuery(
     )
     ON CONFLICT (review_id)
     DO UPDATE SET
+      company_id = EXCLUDED.company_id,
       response_text = EXCLUDED.response_text,
       responder_user_id = EXCLUDED.responder_user_id,
       responded_at = NOW(),
@@ -245,6 +257,14 @@ export async function upsertReviewResponseQuery(
     response_text: string;
     responded_at: string;
   }>(upsertSql, [reviewId, companyId, userId, input.responseText]);
+
+  if (!saved) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "No se pudo guardar la respuesta de la reseña.",
+      500
+    );
+  }
 
   return mapReviewResponse({
     id: saved.id,

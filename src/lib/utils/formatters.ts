@@ -1,21 +1,42 @@
-export function formatPhone(value?: string | null): string {
+import { formatCompactNumber, formatNumber, formatPercent } from "./numbers";
+
+export function formatPhone(value: string | null | undefined): string {
   if (!value) return "—";
-  return value;
+  return value.trim();
 }
 
-export function formatCurrency(
-  value?: number | null,
-  currency: string = "PEN"
+export function formatEmail(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.trim().toLowerCase();
+}
+
+export function formatUrl(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.trim();
+}
+
+export function formatScore(value: number | null | undefined): string {
+  return (value ?? 0).toFixed(1);
+}
+
+export function formatRating(value: number | null | undefined): string {
+  return `${(value ?? 0).toFixed(1)} / 5`;
+}
+
+export function formatKpiValue(
+  value: number | string | null | undefined,
+  mode: "number" | "compact" | "percent" | "text" = "text"
 ): string {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value ?? 0);
-}
+  if (typeof value === "string") return value;
 
-export function formatBoolean(value?: boolean | null): string {
-  if (value === true) return "Sí";
-  if (value === false) return "No";
-  return "—";
+  switch (mode) {
+    case "number":
+      return formatNumber(value);
+    case "compact":
+      return formatCompactNumber(value);
+    case "percent":
+      return formatPercent(value);
+    default:
+      return String(value ?? "—");
+  }
 }

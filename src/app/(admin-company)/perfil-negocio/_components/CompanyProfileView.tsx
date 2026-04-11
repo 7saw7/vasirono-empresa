@@ -1,40 +1,26 @@
+import type { CompanyProfile } from "@/features/admin-company/company/types";
 import { AdminCompanyHeader } from "@/components/layout/AdminCompanyHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CompanyProfileForm } from "./CompanyProfileForm";
-import { CompanyMediaManager } from "./CompanyMediaManager";
 import { CompanyContactsForm } from "./CompanyContactsForm";
 import { CompanyCategoriesForm } from "./CompanyCategoriesForm";
-import type { CompanyProfile } from "@/features/admin-company/company/types";
+import { CompanyMediaManager } from "./CompanyMediaManager";
 
 export function CompanyProfileView({ data }: { data: CompanyProfile }) {
   return (
     <div className="space-y-6">
       <AdminCompanyHeader
-        title="Perfil del negocio"
-        description="Administra la información corporativa que representa a tu empresa."
+        title={data.name}
+        description="Gestiona la información pública principal de tu negocio dentro de Vasirono."
       />
 
-      <SectionCard
-        title={data.name}
-        description="Resumen corporativo actual."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <StatusBadge label={data.verificationStatus} tone="warning" />
-          {data.priceLabel ? <StatusBadge label={data.priceLabel} tone="info" /> : null}
-        </div>
-      </SectionCard>
+      <CompanyProfileForm data={data} />
 
-      <SectionCard
-        title="Datos principales"
-        description="Edita la información central del negocio."
-      >
-        <CompanyProfileForm data={data} />
-      </SectionCard>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <CompanyContactsForm contacts={data.contacts} />
+        <CompanyCategoriesForm categories={data.categories} />
+      </div>
 
-      <CompanyMediaManager items={data.media} />
-      <CompanyContactsForm items={data.contacts} />
-      <CompanyCategoriesForm items={data.categories} />
+      <CompanyMediaManager media={data.media} />
     </div>
   );
 }

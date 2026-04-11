@@ -1,26 +1,12 @@
-import { NextResponse } from "next/server";
 import { getDashboardQuery } from "@/lib/db/queries/admin-company/dashboard";
+import { getCompanyContext } from "@/lib/auth/company-context";
+import { handleRoute } from "@/lib/http/handle-route";
+
+export const runtime = "nodejs";
 
 export async function GET() {
-  try {
-    const data = await getDashboardQuery();
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message:
-            error instanceof Error
-              ? error.message
-              : "No se pudo cargar el dashboard.",
-        },
-      },
-      { status: 500 }
-    );
-  }
+  return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("viewDashboard");
+    return getDashboardQuery(companyId);
+  });
 }

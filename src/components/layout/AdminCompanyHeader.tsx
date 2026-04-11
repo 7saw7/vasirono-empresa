@@ -1,31 +1,31 @@
-import { Button } from "@/components/ui/Button";
+import type { ReactNode } from "react";
+
+type AdminCompanyHeaderProps = {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+};
 
 export function AdminCompanyHeader({
   title,
   description,
-  action,
-}: {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-}) {
+  actions,
+}: AdminCompanyHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
-      <div>
+    <div className="flex flex-col gap-4 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm md:flex-row md:items-start md:justify-between">
+      <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
           {title}
         </h1>
+
         {description ? (
-          <p className="mt-1 text-sm text-neutral-500">{description}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+            {description}
+          </p>
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
-        {action}
-        <Button variant="secondary" size="sm">
-          Ayuda
-        </Button>
-      </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   );
 }

@@ -1,88 +1,142 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import type {
+  BranchDetail,
+  UpsertBranchInput,
+} from "@/features/admin-company/branches/types";
+import { updateBranch } from "@/features/admin-company/branches/service";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import type { BranchDetail } from "@/features/admin-company/branches/types";
+import { Button } from "@/components/ui/Button";
 
 export function BranchProfileForm({ branch }: { branch: BranchDetail }) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<UpsertBranchInput>({
     name: branch.name,
     description: branch.description,
     address: branch.address,
     phone: branch.phone,
     email: branch.email,
+    districtId: branch.districtId ?? 0,
+    isMain: branch.isMain,
+    isActive: branch.isActive,
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function updateField<K extends keyof typeof form>(key: K, value: string) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  function setField<K extends keyof UpsertBranchInput>(
+    key: K,
+    value: UpsertBranchInput[K]
+  ) {
+    setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsLoading(true);
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
 
     try {
-      await fetch(`/api/admin-company/branches/${branch.branchId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...form,
-          districtId: 1,
-          isMain: branch.isMain,
-          isActive: branch.isActive,
-        }),
-      });
+      await updateBranch(branch.branchId, form);
+      setMessage("Sucursal actualizada correctamente.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar la sucursal."
+      );
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-      <Input
-        label="Nombre"
-        value={form.name}
-        onChange={(event) => updateField("name", event.target.value)}
-      />
-      <Input
-        label="Correo"
-        value={form.email}
-        onChange={(event) => updateField("email", event.target.value)}
-      />
-      <div className="md:col-span-2">
+    <SectionCard
+      title="Perfil de la sucursal"
+      description="Edita la información principal visible para esta sede."
+    >
+      <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
         <Input
-          label="Dirección"
-          value={form.address}
-          onChange={(event) => updateField("address", event.target.value)}
+          label="Nombre"
+          value={form.name}
+          onChange={(e) => setField("name", e.target.value)}
+          required
         />
-      </div>
-      <Input
-        label="Teléfono"
-        value={form.phone}
-        onChange={(event) => updateField("phone", event.target.value)}
-      />
-      <div className="md:col-span-2">
-        <Textarea
-          label="Descripción"
-          value={form.description}
-          onChange={(event) => updateField("description", event.target.value)}
-        />
-      </div>
 
-      <div className="md:col-span-2 flex justify-end">
-        <Button type="submit" isLoading={isLoading}>
-          Guardar sucursal
-        </Button>
-      </div>
-    </form>
+        <Input
+          label="Distrito"
+          value={String(form.districtId || "")}
+          onChange={(e) => setField("districtId", Number(e.target.value || 0))}
+          required
+        />
+
+        <div className="md:col-span-2">
+          <Input
+            label="Dirección"
+            value={form.address}
+            onChange={(e) => setField("address", e.target.value)}
+            required
+          />
+        </div>
+
+        <Input
+          label="Teléfono"
+          value={form.phone}
+          onChange={(e) => setField("phone", e.target.value)}
+        />
+
+        <Input
+          label="Correo"
+          type="email"
+          value={form.email}
+          onChange={(e) => setField("email", e.target.value)}
+        />
+
+        <div className="md:col-span-2">
+          <Textarea
+            label="Descripción"
+            value={form.description}
+            onChange={(e) => setField("description", e.target.value)}
+            rows={4}
+          />
+        </div>
+
+        <label className="flex items-center gap-3 text-sm text-neutral-700">
+          <input
+            type="checkbox"
+            checked={form.isMain}
+            onChange={(e) => setField("isMain", e.target.checked)}
+          />
+          Marcar como sucursal principal
+        </label>
+
+        <label className="flex items-center gap-3 text-sm text-neutral-700">
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(e) => setField("isActive", e.target.checked)}
+          />
+          Sucursal activa
+        </label>
+
+        <div className="md:col-span-2 flex items-center justify-between gap-4">
+          <div>
+            {error ? (
+              <p className="text-sm text-red-600">{error}</p>
+            ) : message ? (
+              <p className="text-sm text-emerald-600">{message}</p>
+            ) : null}
+          </div>
+
+          <Button type="submit" disabled={loading}>
+            {loading ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      </form>
+    </SectionCard>
   );
 }

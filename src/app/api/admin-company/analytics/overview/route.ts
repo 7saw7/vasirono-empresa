@@ -1,24 +1,26 @@
 import { NextRequest } from "next/server";
+import { getCompanyContext } from "@/lib/auth/company-context";
+import { getAnalyticsOverviewQuery } from "@/lib/db/queries/admin-company/analytics";
 import { handleRoute } from "@/lib/http/handle-route";
 import { parseWithSchema } from "@/lib/validation/parse";
 import { analyticsFiltersSchema } from "@/features/admin-company/analytics/schema";
-import { getAnalyticsOverviewQuery } from "@/lib/db/queries/admin-company/analytics";
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("viewAnalytics");
     const { searchParams } = new URL(request.url);
 
     const filters = parseWithSchema(
       analyticsFiltersSchema,
       {
-        from: searchParams.get("from") ?? undefined,
-        to: searchParams.get("to") ?? undefined,
-        branchId: searchParams.get("branchId") ?? undefined,
-        source: searchParams.get("source") ?? undefined,
+        from: searchParams.get("from"),
+        to: searchParams.get("to"),
       },
-      "Filtros de analytics inválidos."
+      "El rango analítico no es válido."
     );
 
-    return getAnalyticsOverviewQuery(filters);
+    return getAnalyticsOverviewQuery(companyId, filters);
   });
 }

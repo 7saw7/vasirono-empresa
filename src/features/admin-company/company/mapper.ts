@@ -26,6 +26,21 @@ type RawCompanyCategoryItem = {
   price_label?: string | null;
 };
 
+type RawCompanyProfile = {
+  company_id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  verification_status: string | null;
+  price_label?: string | null;
+  media: RawCompanyMediaItem[];
+  contacts: RawCompanyContactItem[];
+  categories: RawCompanyCategoryItem[];
+};
+
 export function mapCompanyMediaItem(raw: RawCompanyMediaItem): CompanyMediaItem {
   return {
     id: raw.media_id,
@@ -57,20 +72,7 @@ export function mapCompanyCategoryItem(
   };
 }
 
-export function mapCompanyProfile(raw: {
-  company_id: number;
-  name: string;
-  description: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  verification_status: string;
-  price_label?: string | null;
-  media: RawCompanyMediaItem[];
-  contacts: RawCompanyContactItem[];
-  categories: RawCompanyCategoryItem[];
-}): CompanyProfile {
+export function mapCompanyProfile(raw: RawCompanyProfile): CompanyProfile {
   return {
     companyId: raw.company_id,
     name: raw.name,
@@ -79,7 +81,7 @@ export function mapCompanyProfile(raw: {
     phone: raw.phone ?? "",
     email: raw.email ?? "",
     website: raw.website ?? "",
-    verificationStatus: raw.verification_status,
+    verificationStatus: raw.verification_status ?? "Pendiente",
     priceLabel: raw.price_label ?? null,
     media: raw.media.map(mapCompanyMediaItem),
     contacts: raw.contacts.map(mapCompanyContactItem),

@@ -1,67 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { getCompanyContext } from "@/lib/auth/company-context";
 import {
   createBranchQuery,
   listBranchesQuery,
 } from "@/lib/db/queries/admin-company/branches";
+import { handleRoute } from "@/lib/http/handle-route";
+import { parseWithSchema } from "@/lib/validation/parse";
+import {
+  branchFiltersSchema,
+  upsertBranchSchema,
+} from "@/features/admin-company/branches/schema";
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("manageBranches");
     const { searchParams } = new URL(request.url);
 
-    const search = searchParams.get("search") ?? undefined;
-    const status = searchParams.get("status") ?? undefined;
-    const districtIdParam = searchParams.get("districtId");
-
-    const data = await listBranchesQuery({
-      search,
-      status: status ?? undefined,
-      districtId: districtIdParam ? Number(districtIdParam) : undefined,
-    });
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    return NextResponse.json(
+    const filters = parseWithSchema(
+      branchFiltersSchema,
       {
-        success: false,
-        error: {
-          message:
-            error instanceof Error
-              ? error.message
-              : "No se pudieron cargar las sucursales.",
-        },
+        search: searchParams.get("search"),
+        status: searchParams.get("status"),
+        districtId: searchParams.get("districtId"),
       },
-      { status: 500 }
+      "Los filtros enviados no son válidos."
     );
-  }
+
+    return listBranchesQuery(companyId, filters);
+  });
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("manageBranches");
     const body = await request.json();
-    const data = await createBranchQuery(body);
 
-    return NextResponse.json(
-      {
-        success: true,
-        data,
-      },
-      { status: 201 }
+    const input = parseWithSchema(
+      upsertBranchSchema,
+      body,
+      "Los datos de la sucursal no son válidos."
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message:
-            error instanceof Error
-              ? error.message
-              : "No se pudo crear la sucursal.",
-        },
-      },
-      { status: 400 }
-    );
-  }
+
+    return createBranchQuery(companyId, input);
+  });
 }

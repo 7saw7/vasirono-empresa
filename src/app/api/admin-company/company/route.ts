@@ -1,54 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { getCompanyContext } from "@/lib/auth/company-context";
 import {
   getCompanyProfileQuery,
   updateCompanyProfileQuery,
 } from "@/lib/db/queries/admin-company/company";
+import { handleRoute } from "@/lib/http/handle-route";
+import { validateUpdateCompanyProfileInput } from "@/features/admin-company/company/schema";
+
+export const runtime = "nodejs";
 
 export async function GET() {
-  try {
-    const data = await getCompanyProfileQuery();
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message:
-            error instanceof Error
-              ? error.message
-              : "No se pudo cargar el perfil del negocio.",
-        },
-      },
-      { status: 500 }
-    );
-  }
+  return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("manageCompany");
+    return getCompanyProfileQuery(companyId);
+  });
 }
 
 export async function PUT(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
+    const { companyId } = await getCompanyContext("manageCompany");
     const body = await request.json();
-    const data = await updateCompanyProfileQuery(body);
 
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message:
-            error instanceof Error
-              ? error.message
-              : "No se pudo actualizar el perfil del negocio.",
-        },
-      },
-      { status: 400 }
-    );
-  }
+    const input = validateUpdateCompanyProfileInput(body);
+
+    return updateCompanyProfileQuery(companyId, input);
+  });
 }

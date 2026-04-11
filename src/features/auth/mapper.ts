@@ -1,3 +1,4 @@
+import type { AppRole } from "@/lib/constants/roles";
 import type { AuthUser } from "./types";
 
 type RawAuthUser = {
@@ -13,7 +14,7 @@ export function mapAuthUser(raw: RawAuthUser): AuthUser {
     id: raw.id,
     name: raw.name,
     email: raw.email,
-    role: raw.role,
+    role: raw.role as AppRole,
     companyId: raw.company_id ?? null,
   };
 }

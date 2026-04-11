@@ -8,21 +8,21 @@ export type ApiErrorResponse = {
   error: {
     code: string;
     message: string;
-    details?: unknown;
+    details?: Record<string, string[]>;
   };
 };
 
-export function ok<T>(data: T): ApiSuccessResponse<T> {
+export function createSuccessResponse<T>(data: T): ApiSuccessResponse<T> {
   return {
     success: true,
     data,
   };
 }
 
-export function fail(
+export function createErrorResponse(
   code: string,
   message: string,
-  details?: unknown
+  details?: Record<string, string[]>
 ): ApiErrorResponse {
   return {
     success: false,

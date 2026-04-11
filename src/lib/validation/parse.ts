@@ -1,18 +1,37 @@
-import { ZodError, ZodSchema } from "zod";
+import { ZodSchema, ZodError } from "zod";
 import { AppError } from "@/lib/errors/app-error";
+
+function mapZodIssues(error: ZodError): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+
+  for (const issue of error.issues) {
+    const path = issue.path.join(".") || "root";
+
+    if (!fieldErrors[path]) {
+      fieldErrors[path] = [];
+    }
+
+    fieldErrors[path].push(issue.message);
+  }
+
+  return fieldErrors;
+}
 
 export function parseWithSchema<T>(
   schema: ZodSchema<T>,
   input: unknown,
-  message = "Datos inválidos."
+  message = "Los datos enviados no son válidos."
 ): T {
-  try {
-    return schema.parse(input);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      throw new AppError("VALIDATION_ERROR", message, 400, error.flatten());
-    }
+  const result = schema.safeParse(input);
 
-    throw error;
+  if (!result.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      message,
+      422,
+      mapZodIssues(result.error)
+    );
   }
+
+  return result.data;
 }
