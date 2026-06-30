@@ -1,4 +1,10 @@
-import type { AuthUser, LoginInput } from "./types";
+import type {
+  AcceptBusinessInvitationInput,
+  AuthUser,
+  BusinessInvitationAcceptResult,
+  BusinessInvitationPreview,
+  LoginInput,
+} from "./types";
 
 export async function loginService(input: LoginInput): Promise<AuthUser> {
   const response = await fetch("/api/auth/login", {
@@ -45,4 +51,67 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 
   return payload.data as AuthUser;
+}
+export async function recoverPasswordService(email: string): Promise<void> {
+  const response = await fetch("/api/auth/recover-password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(
+      payload?.error?.message || "No se pudo iniciar la recuperación."
+    );
+  }
+}
+
+
+export async function previewBusinessInvitationService(
+  token: string
+): Promise<BusinessInvitationPreview> {
+  const searchParams = new URLSearchParams({ token });
+  const response = await fetch(
+    `/api/auth/business-invitations/preview?${searchParams.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(
+      payload?.error?.message || "La invitación no es válida o expiró."
+    );
+  }
+
+  return payload.data as BusinessInvitationPreview;
+}
+
+export async function acceptBusinessInvitationService(
+  input: AcceptBusinessInvitationInput
+): Promise<BusinessInvitationAcceptResult> {
+  const response = await fetch("/api/auth/business-invitations/accept", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(
+      payload?.error?.message || "No se pudo activar la cuenta empresa."
+    );
+  }
+
+  return payload.data as BusinessInvitationAcceptResult;
 }

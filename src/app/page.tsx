@@ -4,8 +4,11 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatCard } from "@/components/ui/StatCard";
+import { getPublicBusinessOnboardingUrl } from "@/lib/constants/business-onboarding";
 
 export default function HomePage() {
+  const onboardingUrl = getPublicBusinessOnboardingUrl();
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -17,20 +20,21 @@ export default function HomePage() {
               Vasirono
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-neutral-950 md:text-6xl">
-              Plataforma de descubrimiento y control empresarial.
+              Panel empresarial con acceso verificado.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-600 md:text-lg">
-              Administra cómo aparece tu negocio, revisa sucursales, responde
-              reseñas y entiende tu rendimiento desde un panel profesional.
+              Administra tu negocio solo después de pasar el filtro de reclamo, registro o verificación presencial de Vasirono.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/login">
                 <Button size="lg">Entrar al panel</Button>
               </Link>
-              <Button variant="secondary" size="lg">
-                Ver más
-              </Button>
+              <Link href={onboardingUrl}>
+                <Button variant="secondary" size="lg">
+                  Reclamar o registrar negocio
+                </Button>
+              </Link>
             </div>
           </div>
 

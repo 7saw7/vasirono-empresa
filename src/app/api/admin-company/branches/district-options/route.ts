@@ -11,6 +11,6 @@ export async function GET(_request: NextRequest) {
 
     const items = await listBranchDistrictOptionsQuery(companyId);
 
-    return { items };
+    return items;
   });
 }

@@ -86,7 +86,8 @@ export function validateCompanyProfile(input: unknown): CompanyProfile {
   const data = input as CompanyProfile;
 
   if (
-    !isNonEmptyString(data.companyId) ||
+    !Number.isInteger(data.companyId) ||
+    data.companyId <= 0 ||
     !isNonEmptyString(data.name) ||
     typeof data.description !== "string" ||
     typeof data.address !== "string" ||

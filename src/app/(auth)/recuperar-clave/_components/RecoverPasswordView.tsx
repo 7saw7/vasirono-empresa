@@ -4,14 +4,32 @@ import { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { recoverPasswordService } from "@/features/auth/service";
 
 export function RecoverPasswordView() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitted(false);
+    setError(null);
+    setLoading(true);
+
+    try {
+      await recoverPasswordService(email);
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo iniciar la recuperación."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -36,8 +54,10 @@ export function RecoverPasswordView() {
               </p>
             ) : null}
 
-            <Button type="submit" className="w-full">
-              Enviar instrucciones
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Enviando..." : "Enviar instrucciones"}
             </Button>
           </form>
         </SectionCard>

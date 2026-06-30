@@ -9,7 +9,7 @@ import type {
 
 export function mapBranchListItem(raw: {
   branch_id: number;
-  company_id: string;
+  company_id: number;
   name: string;
   description?: string | null;
   address: string;
@@ -103,7 +103,7 @@ export function mapBranchMediaItem(raw: {
 
 export function mapBranchDetail(raw: {
   branch_id: number;
-  company_id: string;
+  company_id: number;
   name: string;
   description?: string | null;
   address: string;

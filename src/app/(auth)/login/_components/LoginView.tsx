@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { getPublicBusinessOnboardingUrl } from "@/lib/constants/business-onboarding";
 import { LoginForm } from "./LoginForm";
 
-export function LoginView() {
+export function LoginView({ email }: { email?: string }) {
+  const onboardingUrl = getPublicBusinessOnboardingUrl();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-10">
       <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
@@ -16,7 +20,21 @@ export function LoginView() {
           </p>
         </div>
 
-        <LoginForm />
+        <LoginForm initialEmail={email} />
+
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+          <p className="font-medium text-neutral-900">¿Aún no tienes acceso?</p>
+          <p className="mt-1 leading-6">
+            La creación de cuentas empresa empieza reclamando o registrando el
+            negocio en la web pública. No hay registro libre desde este panel.
+          </p>
+          <Link
+            href={onboardingUrl}
+            className="mt-3 inline-flex font-medium text-neutral-950 underline underline-offset-4"
+          >
+            Buscar o registrar mi negocio
+          </Link>
+        </div>
       </div>
     </div>
   );

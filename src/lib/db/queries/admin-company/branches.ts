@@ -23,7 +23,7 @@ export async function listBranchesQuery(
 
   const rows = await db.query<{
     branch_id: number;
-    company_id: string;
+    company_id: number;
     name: string;
     description?: string | null;
     address: string;
@@ -90,7 +90,7 @@ export async function getBranchByIdQuery(companyId: number, branchId: number) {
 
   const rows = await db.query<{
     branch_id: number;
-    company_id: string;
+    company_id: number;
     name: string;
     description?: string | null;
     address: string;
@@ -251,7 +251,7 @@ export async function createBranchQuery(
 
     const rows = await tx.query<{
       branch_id: number;
-      company_id: string;
+      company_id: number;
       name: string;
       description?: string | null;
       address: string;
@@ -392,7 +392,7 @@ export async function updateBranchQuery(
 
     const rows = await tx.query<{
       branch_id: number;
-      company_id: string;
+      company_id: number;
       name: string;
       description?: string | null;
       address: string;

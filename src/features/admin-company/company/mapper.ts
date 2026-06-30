@@ -27,7 +27,7 @@ type RawCompanyCategoryItem = {
 };
 
 type RawCompanyProfile = {
-  company_id: string;
+  company_id: number;
   name: string;
   description: string | null;
   address: string | null;

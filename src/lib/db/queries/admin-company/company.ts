@@ -8,7 +8,7 @@ import {
 import type { UpdateCompanyProfileInput } from "@/features/admin-company/company/types";
 
 type RawCompanyRow = {
-  company_id: string;
+  company_id: number;
   name: string;
   description: string | null;
   address: string | null;
@@ -25,7 +25,7 @@ export async function getCompanyProfileQuery(companyId: number) {
   const rows = await db.query<RawCompanyRow>(
     `
       select
-        c.id::text as company_id,
+        c.id as company_id,
         c.name,
         c.description,
         c.address,

@@ -13,34 +13,35 @@ export const ADMIN_COMPANY_PERMISSIONS = [
 export type AdminCompanyPermission =
   (typeof ADMIN_COMPANY_PERMISSIONS)[number];
 
+const FULL_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
+  "viewDashboard",
+  "viewAnalytics",
+  "manageCompany",
+  "manageBranches",
+  "manageReviews",
+  "manageSettings",
+  "viewVerifications",
+];
+
+const READ_ONLY_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
+  "viewDashboard",
+  "viewAnalytics",
+  "viewVerifications",
+];
+
 const ROLE_PERMISSION_MAP: Record<AppRole, AdminCompanyPermission[]> = {
-  [ROLES.superAdmin]: [
-    "viewDashboard",
-    "viewAnalytics",
-    "manageCompany",
-    "manageBranches",
-    "manageReviews",
-    "manageSettings",
-    "viewVerifications",
-  ],
-  [ROLES.backoffice]: [
-    "viewDashboard",
-    "viewAnalytics",
-    "manageCompany",
-    "manageBranches",
-    "manageReviews",
-    "manageSettings",
-    "viewVerifications",
-  ],
-  [ROLES.adminCompany]: [
-    "viewDashboard",
-    "viewAnalytics",
-    "manageCompany",
-    "manageBranches",
-    "manageReviews",
-    "manageSettings",
-    "viewVerifications",
-  ],
+  [ROLES.superAdmin]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.admin]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.moderator]: READ_ONLY_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.analyst]: ["viewDashboard", "viewAnalytics"],
+  [ROLES.support]: READ_ONLY_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.companyOwner]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.companyManager]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.user]: [],
+
+  // Roles legacy del panel anterior.
+  [ROLES.backoffice]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.adminCompany]: FULL_ADMIN_COMPANY_PERMISSIONS,
 };
 
 export function hasPermission(

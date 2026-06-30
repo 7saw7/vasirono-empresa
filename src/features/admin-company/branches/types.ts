@@ -1,6 +1,6 @@
 export type BranchListItem = {
   branchId: number;
-  companyId: string;
+  companyId: number;
   name: string;
   description: string;
   address: string;

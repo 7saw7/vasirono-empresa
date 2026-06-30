@@ -20,7 +20,7 @@ export type CompanyCategoryItem = {
 };
 
 export type CompanyProfile = {
-  companyId: string;
+  companyId: number;
   name: string;
   description: string;
   address: string;

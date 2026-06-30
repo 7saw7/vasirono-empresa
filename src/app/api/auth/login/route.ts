@@ -2,8 +2,11 @@ import { NextRequest } from "next/server";
 import { handleRoute } from "@/lib/http/handle-route";
 import { parseWithSchema } from "@/lib/validation/parse";
 import { loginSchema } from "@/features/auth/schema";
-import { loginWithCredentialsQuery } from "@/lib/db/queries/auth";
-import { setSessionCookie } from "@/lib/auth/session";
+import {
+  loginWithAuthService,
+  type AuthServicePrincipal,
+} from "@/lib/auth/auth-service-client";
+import { setAuthServiceSessionCookies } from "@/lib/auth/session";
 import {
   assertRateLimit,
   clearRateLimit,
@@ -48,20 +51,22 @@ export async function POST(request: NextRequest) {
     await assertRateLimit(ipEmailKey, LOGIN_EMAIL_LIMIT);
 
     try {
-      const result = await loginWithCredentialsQuery(input);
+      const result = await loginWithAuthService(input, request.headers);
 
       await clearRateLimit(emailKey);
       await clearRateLimit(ipEmailKey);
 
-      await setSessionCookie(result.accessToken);
+      await setAuthServiceSessionCookies(result);
 
       return {
-        user: result.user,
+        user: mapPrincipalToAuthUser(result.principal),
       };
     } catch (error) {
       if (error instanceof AppError) {
         if (
+          error.status === 401 ||
           error.code === "INVALID_CREDENTIALS" ||
+          error.code === "USER_INACTIVE" ||
           error.code === "ACCOUNT_DISABLED"
         ) {
           await recordRateLimitFailure(ipKey, LOGIN_IP_LIMIT);
@@ -73,4 +78,14 @@ export async function POST(request: NextRequest) {
       throw error;
     }
   });
+}
+
+function mapPrincipalToAuthUser(principal: AuthServicePrincipal) {
+  return {
+    id: principal.user.id,
+    name: principal.user.name,
+    email: principal.user.email,
+    companyId: principal.activeCompanyId,
+    role: principal.activeRole,
+  };
 }
