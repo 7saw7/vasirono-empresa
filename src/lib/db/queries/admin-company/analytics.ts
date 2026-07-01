@@ -1,276 +1,202 @@
-import { getDb } from "@/lib/db/server";
-import { mapAnalyticsOverview, mapBranchRankingItem, mapFunnelStep } from "@/features/admin-company/analytics/mapper";
+import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import {
+  asArray,
+  asRecord,
+  pick,
+  toNumber,
+  toStringValue,
+  type AnyRecord,
+} from "@/lib/http/service-data";
 import type {
   AnalyticsFilters,
+  AnalyticsOverview,
+  AnalyticsPoint,
   BranchRankingItem,
   FunnelStep,
   SourceBreakdownItem,
-  AnalyticsOverview,
 } from "@/features/admin-company/analytics/types";
 
-function normalizeDateRange(filters: AnalyticsFilters) {
-  return {
-    from: filters.from ?? null,
-    to: filters.to ?? null,
-    branchId: filters.branchId ?? null,
-    source: filters.source ?? null,
-  };
-}
-
 export async function getAnalyticsOverviewQuery(
-  companyId: number,
+  _companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<AnalyticsOverview> {
-  const db = getDb();
-  const range = normalizeDateRange(filters);
+  const [overview, trafficSeries, scoreHistory, funnel, branches, sourceBreakdown] =
+    await Promise.all([
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/overview",
+        gatewayPath: "/api/analytics/api/company/analytics/overview",
+        query: filters,
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/traffic-series",
+        gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
+        query: filters,
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/score-history",
+        gatewayPath: "/api/analytics/api/company/analytics/score-history",
+        query: filters,
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/funnel",
+        gatewayPath: "/api/analytics/api/company/analytics/funnel",
+        query: filters,
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/branches",
+        gatewayPath: "/api/analytics/api/company/analytics/branches",
+        query: filters,
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/source-breakdown",
+        gatewayPath: "/api/analytics/api/company/analytics/source-breakdown",
+        query: filters,
+      }),
+    ]);
 
-  const summarySql = `
-    SELECT
-      COALESCE(SUM(profile_views), 0)::int AS profile_views,
-      COALESCE(SUM(favorites_added), 0)::int AS favorites_added,
-      COALESCE(SUM(contact_clicks), 0)::int AS contact_clicks,
-      COALESCE(SUM(claim_submissions), 0)::int AS reviews_generated
-    FROM analytics_conversion_funnel_daily
-    WHERE company_id = $1
-      AND ($2::date IS NULL OR snapshot_date >= $2::date)
-      AND ($3::date IS NULL OR snapshot_date <= $3::date)
-      AND ($4::int IS NULL OR branch_id = $4::int)
-  `;
+  const overviewRow = asRecord(overview);
 
-  const trafficSql = `
-    SELECT
-      TO_CHAR(snapshot_date, 'YYYY-MM-DD') AS label,
-      COALESCE(SUM(profile_views), 0)::int AS value
-    FROM analytics_conversion_funnel_daily
-    WHERE company_id = $1
-      AND ($2::date IS NULL OR snapshot_date >= $2::date)
-      AND ($3::date IS NULL OR snapshot_date <= $3::date)
-      AND ($4::int IS NULL OR branch_id = $4::int)
-    GROUP BY snapshot_date
-    ORDER BY snapshot_date ASC
-    LIMIT 31
-  `;
-
-  const scoreHistorySql = `
-    SELECT
-      TO_CHAR(snapshot_date, 'YYYY-MM-DD') AS label,
-      COALESCE(ROUND(AVG(final_score)::numeric, 2), 0)::float AS value
-    FROM analytics_company_scores_history
-    WHERE company_id = $1
-      AND ($2::date IS NULL OR snapshot_date >= $2::date)
-      AND ($3::date IS NULL OR snapshot_date <= $3::date)
-    GROUP BY snapshot_date
-    ORDER BY snapshot_date ASC
-    LIMIT 12
-  `;
-
-  const funnelSql = `
-    SELECT
-      COALESCE(SUM(profile_views), 0)::int AS profile_views,
-      COALESCE(SUM(favorites_added), 0)::int AS favorites_added,
-      COALESCE(SUM(promotion_opens), 0)::int AS promotion_opens,
-      COALESCE(SUM(contact_clicks), 0)::int AS contact_clicks,
-      COALESCE(SUM(claim_submissions), 0)::int AS claim_submissions
-    FROM analytics_conversion_funnel_daily
-    WHERE company_id = $1
-      AND ($2::date IS NULL OR snapshot_date >= $2::date)
-      AND ($3::date IS NULL OR snapshot_date <= $3::date)
-      AND ($4::int IS NULL OR branch_id = $4::int)
-  `;
-
-  const branchRankingSql = `
-    SELECT
-      abs.branch_id,
-      cb.name AS branch_name,
-      COALESCE(d.name, 'Sin distrito') AS district_name,
-      COALESCE(abs.final_score, 0)::float AS final_score,
-      COALESCE(abs.visits_30d, 0)::int AS visits_30d,
-      COALESCE(abs.favorites_30d, 0)::int AS favorites_30d,
-      COALESCE(abs.contact_clicks_30d, 0)::int AS contact_clicks_30d
-    FROM analytics_branch_scores abs
-    INNER JOIN company_branches cb ON cb.branch_id = abs.branch_id
-    LEFT JOIN districts d ON d.id = cb.district_id
-    WHERE abs.company_id = $1
-    ORDER BY abs.final_score DESC, cb.name ASC
-    LIMIT 20
-  `;
-
-  const sourceBreakdownSql = `
-    SELECT
-      abds.source,
-      COALESCE(SUM(abds.visits_count), 0)::int AS visits_count,
-      COALESCE(SUM(abds.favorites_count), 0)::int AS favorites_count,
-      COALESCE(SUM(abds.contact_clicks), 0)::int AS contact_clicks,
-      COALESCE(SUM(abds.reviews_count), 0)::int AS reviews_count
-    FROM analytics_branch_daily_sources abds
-    INNER JOIN company_branches cb ON cb.branch_id = abds.branch_id
-    WHERE cb.company_id = $1
-      AND ($2::int IS NULL OR abds.branch_id = $2::int)
-      AND ($3::text IS NULL OR abds.source = $3::text)
-    GROUP BY abds.source
-    ORDER BY visits_count DESC, abds.source ASC
-  `;
-
-  const [
-    summaryRows,
-    trafficRows,
-    scoreRows,
-    funnelRows,
-    branchRows,
-    sourceRows,
-  ] = await Promise.all([
-    db.query<{
-      profile_views: number;
-      favorites_added: number;
-      contact_clicks: number;
-      reviews_generated: number;
-    }>(summarySql, [companyId, range.from, range.to, range.branchId]),
-    db.query<{ label: string; value: number }>(trafficSql, [
-      companyId,
-      range.from,
-      range.to,
-      range.branchId,
-    ]),
-    db.query<{ label: string; value: number }>(scoreHistorySql, [
-      companyId,
-      range.from,
-      range.to,
-    ]),
-    db.query<{
-      profile_views: number;
-      favorites_added: number;
-      promotion_opens: number;
-      contact_clicks: number;
-      claim_submissions: number;
-    }>(funnelSql, [companyId, range.from, range.to, range.branchId]),
-    db.query<{
-      branch_id: number;
-      branch_name: string;
-      district_name: string;
-      final_score: number;
-      visits_30d: number;
-      favorites_30d: number;
-      contact_clicks_30d: number;
-    }>(branchRankingSql, [companyId]),
-    db.query<{
-      source: string;
-      visits_count: number;
-      favorites_count: number;
-      contact_clicks: number;
-      reviews_count: number;
-    }>(sourceBreakdownSql, [companyId, range.branchId, range.source]),
-  ]);
-
-  const summary = summaryRows[0] ?? {
-    profile_views: 0,
-    favorites_added: 0,
-    contact_clicks: 0,
-    reviews_generated: 0,
+  return {
+    summary: {
+      profileViews: toNumber(
+        pick(overviewRow, "profileViews", "profile_views", "views")
+      ),
+      favoritesAdded: toNumber(
+        pick(overviewRow, "favoritesAdded", "favorites_added", "favorites")
+      ),
+      contactClicks: toNumber(
+        pick(overviewRow, "contactClicks", "contact_clicks")
+      ),
+      reviewsGenerated: toNumber(
+        pick(overviewRow, "reviewsGenerated", "reviews_generated", "reviews")
+      ),
+    },
+    trafficSeries: normalizePoints(trafficSeries),
+    scoreHistory: normalizePoints(scoreHistory),
+    funnel: normalizeFunnel(funnel),
+    branchRanking: normalizeBranchRanking(branches),
+    sourceBreakdown: normalizeSourceBreakdown(sourceBreakdown),
   };
-
-  const funnel = funnelRows[0] ?? {
-    profile_views: 0,
-    favorites_added: 0,
-    promotion_opens: 0,
-    contact_clicks: 0,
-    claim_submissions: 0,
-  };
-
-  return mapAnalyticsOverview({
-    summary,
-    traffic_series: trafficRows,
-    score_history: scoreRows,
-    funnel: [
-      { key: "views", label: "Vistas perfil", value: funnel.profile_views },
-      { key: "favorites", label: "Favoritos", value: funnel.favorites_added },
-      { key: "promotions", label: "Promos abiertas", value: funnel.promotion_opens },
-      { key: "contacts", label: "Clicks contacto", value: funnel.contact_clicks },
-      { key: "claims", label: "Claims enviados", value: funnel.claim_submissions },
-    ],
-    branch_ranking: branchRows,
-    source_breakdown: sourceRows,
-  });
 }
 
 export async function getAnalyticsBranchRankingQuery(
-  companyId: number
+  _companyId: number,
+  filters: AnalyticsFilters = {}
 ): Promise<BranchRankingItem[]> {
-  const db = getDb();
+  const payload = await serviceRequest<unknown>({
+    service: "analytics",
+    directPath: "/api/company/analytics/branches",
+    gatewayPath: "/api/analytics/api/company/analytics/branches",
+    query: filters,
+    errorCode: "ANALYTICS_SERVICE_ERROR",
+    errorMessage: "No se pudo cargar el ranking de sucursales.",
+  });
 
-  const rows = await db.query<{
-    branch_id: number;
-    branch_name: string;
-    district_name: string;
-    final_score: number;
-    visits_30d: number;
-    favorites_30d: number;
-    contact_clicks_30d: number;
-  }>(
-    `
-      SELECT
-        abs.branch_id,
-        cb.name AS branch_name,
-        COALESCE(d.name, 'Sin distrito') AS district_name,
-        COALESCE(abs.final_score, 0)::float AS final_score,
-        COALESCE(abs.visits_30d, 0)::int AS visits_30d,
-        COALESCE(abs.favorites_30d, 0)::int AS favorites_30d,
-        COALESCE(abs.contact_clicks_30d, 0)::int AS contact_clicks_30d
-      FROM analytics_branch_scores abs
-      INNER JOIN company_branches cb ON cb.branch_id = abs.branch_id
-      LEFT JOIN districts d ON d.id = cb.district_id
-      WHERE abs.company_id = $1
-      ORDER BY abs.final_score DESC, cb.name ASC
-      LIMIT 20
-    `,
-    [companyId]
-  );
-
-  return rows.map(mapBranchRankingItem);
+  return normalizeBranchRanking(payload);
 }
 
+
 export async function getAnalyticsFunnelQuery(
-  companyId: number,
+  _companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<FunnelStep[]> {
-  const db = getDb();
-  const range = normalizeDateRange(filters);
+  const payload = await serviceRequest<unknown>({
+    service: "analytics",
+    directPath: "/api/company/analytics/funnel",
+    gatewayPath: "/api/analytics/api/company/analytics/funnel",
+    query: filters,
+    errorCode: "ANALYTICS_SERVICE_ERROR",
+    errorMessage: "No se pudo cargar el funnel analítico.",
+  });
 
-  const rows = await db.query<{
-    profile_views: number;
-    favorites_added: number;
-    promotion_opens: number;
-    contact_clicks: number;
-    claim_submissions: number;
-  }>(
-    `
-      SELECT
-        COALESCE(SUM(profile_views), 0)::int AS profile_views,
-        COALESCE(SUM(favorites_added), 0)::int AS favorites_added,
-        COALESCE(SUM(promotion_opens), 0)::int AS promotion_opens,
-        COALESCE(SUM(contact_clicks), 0)::int AS contact_clicks,
-        COALESCE(SUM(claim_submissions), 0)::int AS claim_submissions
-      FROM analytics_conversion_funnel_daily
-      WHERE company_id = $1
-        AND ($2::date IS NULL OR snapshot_date >= $2::date)
-        AND ($3::date IS NULL OR snapshot_date <= $3::date)
-        AND ($4::int IS NULL OR branch_id = $4::int)
-    `,
-    [companyId, range.from, range.to, range.branchId]
-  );
+  return normalizeFunnel(payload);
+}
 
-  const funnel = rows[0] ?? {
-    profile_views: 0,
-    favorites_added: 0,
-    promotion_opens: 0,
-    contact_clicks: 0,
-    claim_submissions: 0,
-  };
+export async function getAnalyticsTrafficSeriesQuery(
+  _companyId: number,
+  filters: AnalyticsFilters = {}
+): Promise<AnalyticsPoint[]> {
+  const payload = await serviceRequest<unknown>({
+    service: "analytics",
+    directPath: "/api/company/analytics/traffic-series",
+    gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
+    query: filters,
+    errorCode: "ANALYTICS_SERVICE_ERROR",
+    errorMessage: "No se pudo cargar la serie de tráfico.",
+  });
 
-  return [
-    { key: "views", label: "Vistas perfil", value: funnel.profile_views },
-    { key: "favorites", label: "Favoritos", value: funnel.favorites_added },
-    { key: "promotions", label: "Promos abiertas", value: funnel.promotion_opens },
-    { key: "contacts", label: "Clicks contacto", value: funnel.contact_clicks },
-    { key: "claims", label: "Claims enviados", value: funnel.claim_submissions },
-  ].map(mapFunnelStep);
+  return normalizePoints(payload);
+}
+
+function unwrapRows(value: unknown): AnyRecord[] {
+  if (Array.isArray(value)) return value.map(asRecord);
+
+  const row = asRecord(value);
+
+  for (const key of ["items", "data", "rows", "series", "points", "branches", "ranking", "sources", "steps"]) {
+    const candidate = row[key];
+    if (Array.isArray(candidate)) return candidate.map(asRecord);
+  }
+
+  return [];
+}
+
+function normalizePoints(value: unknown): AnalyticsPoint[] {
+  return unwrapRows(value).map((item) => ({
+    label: toStringValue(
+      pick(item, "label", "date", "day", "period", "snapshotDate", "snapshot_date"),
+      "—"
+    ),
+    value: toNumber(pick(item, "value", "count", "score", "total")),
+  }));
+}
+
+function normalizeFunnel(value: unknown): FunnelStep[] {
+  return unwrapRows(value).map((item, index) => ({
+    key: toStringValue(pick(item, "key", "code"), `step-${index}`),
+    label: toStringValue(pick(item, "label", "name"), "Etapa"),
+    value: toNumber(pick(item, "value", "count", "total")),
+  }));
+}
+
+function normalizeBranchRanking(value: unknown): BranchRankingItem[] {
+  return unwrapRows(value).map((item) => ({
+    branchId: toNumber(pick(item, "branchId", "branch_id", "id")),
+    branchName: toStringValue(
+      pick(item, "branchName", "branch_name", "name"),
+      "Sucursal"
+    ),
+    districtName: toStringValue(
+      pick(item, "districtName", "district_name"),
+      "Sin distrito"
+    ),
+    finalScore: toNumber(pick(item, "finalScore", "final_score", "score")),
+    visits30d: toNumber(pick(item, "visits30d", "visits_30d", "visits")),
+    favorites30d: toNumber(
+      pick(item, "favorites30d", "favorites_30d", "favorites")
+    ),
+    contactClicks30d: toNumber(
+      pick(item, "contactClicks30d", "contact_clicks_30d", "contactClicks", "contact_clicks")
+    ),
+  }));
+}
+
+function normalizeSourceBreakdown(value: unknown): SourceBreakdownItem[] {
+  return unwrapRows(value).map((item) => ({
+    source: toStringValue(pick(item, "source", "eventSource", "event_source"), "direct"),
+    visitsCount: toNumber(pick(item, "visitsCount", "visits_count", "visits")),
+    favoritesCount: toNumber(
+      pick(item, "favoritesCount", "favorites_count", "favorites")
+    ),
+    contactClicks: toNumber(
+      pick(item, "contactClicks", "contact_clicks")
+    ),
+    reviewsCount: toNumber(pick(item, "reviewsCount", "reviews_count", "reviews")),
+  }));
 }

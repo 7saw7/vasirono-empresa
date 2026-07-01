@@ -1,170 +1,219 @@
-import { getDb } from "@/lib/db/server";
-import { AppError } from "@/lib/errors/app-error";
-import { mapDashboardData } from "@/features/admin-company/dashboard/mapper";
+import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import {
+  asArray,
+  asRecord,
+  pick,
+  toBoolean,
+  toIsoString,
+  toNumber,
+  toStringValue,
+  toTone,
+  type AnyRecord,
+} from "@/lib/http/service-data";
 import { validateDashboardData } from "@/features/admin-company/dashboard/schema";
 import type {
-  RawDashboardActivityItem,
-  RawDashboardBranchPerformanceItem,
-  RawDashboardCompanyScore,
-  RawDashboardKpi,
-  RawDashboardPayload,
-  RawDashboardVerificationSummary,
-} from "@/features/admin-company/dashboard/raw-types";
+  DashboardActivityItem,
+  DashboardBranchPerformanceItem,
+  DashboardCompanyScore,
+  DashboardData,
+  DashboardKpi,
+  DashboardVerificationSummary,
+} from "@/features/admin-company/dashboard/types";
 
 export async function getDashboardQuery(companyId: number) {
-  const db = getDb();
+  return getCompanyDashboardQuery(companyId);
+}
 
-  const companyRows = await db.query<{ company_name: string }>(
-    `
-      select
-        c.name as company_name
-      from companies c
-      where c.id = $1
-      limit 1
-    `,
-    [companyId]
-  );
+export async function getCompanyDashboardQuery(companyId: number) {
+  const [companyPayload, analyticsPayload, verificationPayload] =
+    await Promise.all([
+      serviceRequestOptional<unknown>({
+        service: "companies",
+        directPath: "/api/companies/me/profile",
+        gatewayPath: "/api/companies/api/companies/me/profile",
+      }),
+      serviceRequestOptional<unknown>({
+        service: "analytics",
+        directPath: "/api/company/analytics/dashboard",
+        gatewayPath: "/api/analytics/api/company/analytics/dashboard",
+      }),
+      serviceRequestOptional<unknown>({
+        service: "verifications",
+        directPath: "/api/business/verifications/overview",
+        gatewayPath: "/api/verifications/api/business/verifications/overview",
+      }),
+    ]);
 
-  const company = companyRows[0];
+  const company = asRecord(companyPayload);
+  const analytics = asRecord(analyticsPayload);
+  const verification = asRecord(verificationPayload);
 
-  if (!company) {
-    throw new AppError(
-      "NOT_FOUND",
-      "No se encontró la empresa del dashboard.",
-      404
-    );
-  }
-
-  const kpis = await db.query<RawDashboardKpi>(
-    `
-      select * from (
-        select
-          'views' as id,
-          'Visitas 30 días' as label,
-          coalesce(sum(b.visits_30d), 0) as value,
-          'Tráfico agregado de tus sucursales.' as helper,
-          null::text as trend_value,
-          'neutral' as trend_direction
-        from company_branches b
-        where b.company_id = $1
-
-        union all
-
-        select
-          'reviews' as id,
-          'Reseñas 90 días' as label,
-          coalesce(sum(b.reviews_90d), 0) as value,
-          'Volumen reciente de reseñas recibidas.' as helper,
-          null::text as trend_value,
-          'neutral' as trend_direction
-        from company_branches b
-        where b.company_id = $1
-
-        union all
-
-        select
-          'rating' as id,
-          'Rating promedio' as label,
-          coalesce(round(avg(b.avg_rating_90d)::numeric, 1)::text || ' / 5', '0 / 5') as value,
-          'Promedio consolidado del negocio.' as helper,
-          null::text as trend_value,
-          'neutral' as trend_direction
-        from company_branches b
-        where b.company_id = $1
-
-        union all
-
-        select
-          'branches' as id,
-          'Sucursales activas' as label,
-          coalesce(count(*) filter (where b.is_active = true), 0) as value,
-          'Sucursales visibles en la plataforma.' as helper,
-          null::text as trend_value,
-          'neutral' as trend_direction
-        from company_branches b
-        where b.company_id = $1
-      ) k
-    `,
-    [companyId]
-  );
-
-  const branchPerformance = await db.query<RawDashboardBranchPerformanceItem>(
-    `
-      select
-        b.branch_id,
-        b.name as branch_name,
-        coalesce(b.district_name, 'Sin distrito') as district_name,
-        coalesce(b.final_score, 0) as final_score,
-        coalesce(b.visits_30d, 0) as visits_30d,
-        coalesce(b.reviews_90d, 0) as reviews_90d,
-        coalesce(b.avg_rating_90d, 0) as avg_rating_90d,
-        coalesce(b.is_main, false) as is_main
-      from company_branches b
-      where b.company_id = $1
-      order by coalesce(b.final_score, 0) desc, b.name asc
-      limit 10
-    `,
-    [companyId]
-  );
-
-  const companyScoreRows = await db.query<RawDashboardCompanyScore>(
-    `
-      select
-        coalesce(c.final_score, 0) as final_score,
-        coalesce(c.popularity_score, 0) as popularity_score,
-        coalesce(c.engagement_score, 0) as engagement_score,
-        coalesce(c.conversion_score, 0) as conversion_score,
-        coalesce(c.trust_score, 0) as trust_score,
-        coalesce(c.freshness_score, 0) as freshness_score,
-        coalesce(c.score_calculated_at::text, now()::text) as calculated_at
-      from companies c
-      where c.id = $1
-      limit 1
-    `,
-    [companyId]
-  );
-
-  const verificationRows = await db.query<RawDashboardVerificationSummary>(
-    `
-      select
-        coalesce(v.level, 'Pendiente') as level,
-        coalesce(v.status_label, 'Sin revisión') as status_label,
-        coalesce(v.status_tone, 'default') as status_tone,
-        coalesce(v.score, 0) as score,
-        v.last_review_at::text as last_review_at,
-        coalesce(v.checks_completed, 0) as checks_completed,
-        coalesce(v.checks_total, 0) as checks_total
-      from company_verification_summary v
-      where v.company_id = $1
-      limit 1
-    `,
-    [companyId]
-  );
-
-  const activityRows = await db.query<RawDashboardActivityItem>(
-    `
-      select
-        a.id::text as id,
-        a.title,
-        a.description,
-        a.created_at::text as created_at,
-        a.type
-      from company_activity_feed a
-      where a.company_id = $1
-      order by a.created_at desc
-      limit 10
-    `,
-    [companyId]
-  );
-
-  const raw: RawDashboardPayload = {
-    company_name: company.company_name,
-    kpis,
-    recent_activity: activityRows,
-    company_score: companyScoreRows[0] ?? null,
-    verification_summary: verificationRows[0] ?? null,
-    branch_performance: branchPerformance,
+  const data: DashboardData = {
+    companyName: toStringValue(
+      pick(company, "name", "companyName", "company_name") ??
+        pick(analytics, "companyName", "company_name"),
+      "Mi negocio"
+    ),
+    kpis: normalizeKpis(analytics),
+    recentActivity: normalizeActivity(analytics),
+    companyScore: normalizeCompanyScore(analytics),
+    verificationSummary: normalizeVerificationSummary(verification, analytics),
+    branchPerformance: normalizeBranchPerformance(analytics),
   };
 
-  return validateDashboardData(mapDashboardData(raw));
+  return validateDashboardData(data);
+}
+
+function normalizeKpis(row: AnyRecord): DashboardKpi[] {
+  const fromService = asArray(pick(row, "kpis", "cards"));
+
+  if (fromService.length) {
+    return fromService.map((item, index) => ({
+      id: toStringValue(pick(item, "id", "key"), `kpi-${index}`),
+      label: toStringValue(pick(item, "label", "title"), "Indicador"),
+      value: toStringValue(pick(item, "value"), "0"),
+      helper: toStringValue(pick(item, "helper", "description"), "") || undefined,
+      trend: normalizeTrend(pick(item, "trend")),
+    }));
+  }
+
+  const summary = asRecord(pick(row, "summary"));
+  const profileViews = toNumber(pick(row, "profileViews", "profile_views") ?? pick(summary, "profileViews", "profile_views"));
+  const favoritesAdded = toNumber(pick(row, "favoritesAdded", "favorites_added") ?? pick(summary, "favoritesAdded", "favorites_added"));
+  const contactClicks = toNumber(pick(row, "contactClicks", "contact_clicks") ?? pick(summary, "contactClicks", "contact_clicks"));
+  const reviewsGenerated = toNumber(pick(row, "reviewsGenerated", "reviews_generated") ?? pick(summary, "reviewsGenerated", "reviews_generated"));
+
+  return [
+    {
+      id: "profile-views",
+      label: "Vistas del perfil",
+      value: String(profileViews),
+      helper: "Interacciones registradas por Analytics.",
+    },
+    {
+      id: "favorites-added",
+      label: "Favoritos",
+      value: String(favoritesAdded),
+      helper: "Usuarios que guardaron el negocio.",
+    },
+    {
+      id: "contact-clicks",
+      label: "Clics de contacto",
+      value: String(contactClicks),
+      helper: "Clics en teléfono, WhatsApp o web.",
+    },
+    {
+      id: "reviews",
+      label: "Reseñas",
+      value: String(reviewsGenerated),
+      helper: "Reseñas generadas en el periodo.",
+    },
+  ];
+}
+
+function normalizeTrend(value: unknown): DashboardKpi["trend"] {
+  const row = asRecord(value);
+  if (!Object.keys(row).length) return undefined;
+
+  const direction = toStringValue(pick(row, "direction"), "neutral");
+  return {
+    value: toStringValue(pick(row, "value"), "0%"),
+    direction:
+      direction === "up" || direction === "down" || direction === "neutral"
+        ? direction
+        : "neutral",
+  };
+}
+
+function normalizeActivity(row: AnyRecord): DashboardActivityItem[] {
+  return asArray(pick(row, "recentActivity", "recent_activity", "activity")).map(
+    (item, index) => ({
+      id: toStringValue(pick(item, "id"), `activity-${index}`),
+      title: toStringValue(pick(item, "title"), "Actividad"),
+      description: toStringValue(pick(item, "description"), ""),
+      createdAt: toIsoString(pick(item, "createdAt", "created_at")),
+      type: normalizeActivityType(pick(item, "type")),
+    })
+  );
+}
+
+function normalizeActivityType(value: unknown): DashboardActivityItem["type"] {
+  const type = toStringValue(value, "system");
+
+  if (
+    ["review", "verification", "branch", "analytics", "company", "system"].includes(
+      type
+    )
+  ) {
+    return type as DashboardActivityItem["type"];
+  }
+
+  return "system";
+}
+
+function normalizeCompanyScore(row: AnyRecord): DashboardCompanyScore | null {
+  const score = asRecord(pick(row, "companyScore", "company_score", "score"));
+
+  if (!Object.keys(score).length) return null;
+
+  return {
+    finalScore: toNumber(pick(score, "finalScore", "final_score")),
+    popularityScore: toNumber(pick(score, "popularityScore", "popularity_score")),
+    engagementScore: toNumber(pick(score, "engagementScore", "engagement_score")),
+    conversionScore: toNumber(pick(score, "conversionScore", "conversion_score")),
+    trustScore: toNumber(pick(score, "trustScore", "trust_score")),
+    freshnessScore: toNumber(pick(score, "freshnessScore", "freshness_score")),
+    calculatedAt: toIsoString(pick(score, "calculatedAt", "calculated_at")),
+  };
+}
+
+function normalizeVerificationSummary(
+  verification: AnyRecord,
+  analytics: AnyRecord
+): DashboardVerificationSummary | null {
+  const summary = asRecord(
+    pick(verification, "summary") ??
+      pick(analytics, "verificationSummary", "verification_summary")
+  );
+
+  if (!Object.keys(summary).length) return null;
+
+  return {
+    level: toStringValue(pick(summary, "level"), "Pendiente"),
+    statusLabel: toStringValue(
+      pick(summary, "statusLabel", "status_label"),
+      "Sin revisión"
+    ),
+    statusTone: toTone(pick(summary, "statusTone", "status_tone")),
+    score: toNumber(pick(summary, "score")),
+    lastReviewAt:
+      pick(summary, "lastReviewAt", "last_review_at") === undefined
+        ? null
+        : String(pick(summary, "lastReviewAt", "last_review_at")),
+    checksCompleted: toNumber(
+      pick(summary, "checksCompleted", "checks_completed")
+    ),
+    checksTotal: toNumber(pick(summary, "checksTotal", "checks_total")),
+  };
+}
+
+function normalizeBranchPerformance(row: AnyRecord): DashboardBranchPerformanceItem[] {
+  return asArray(pick(row, "branchPerformance", "branch_performance", "branches")).map(
+    (item) => ({
+      branchId: toNumber(pick(item, "branchId", "branch_id", "id")),
+      branchName: toStringValue(
+        pick(item, "branchName", "branch_name", "name"),
+        "Sucursal"
+      ),
+      districtName: toStringValue(
+        pick(item, "districtName", "district_name"),
+        "Sin distrito"
+      ),
+      finalScore: toNumber(pick(item, "finalScore", "final_score")),
+      visits30d: toNumber(pick(item, "visits30d", "visits_30d")),
+      reviews90d: toNumber(pick(item, "reviews90d", "reviews_90d")),
+      avgRating90d: toNumber(pick(item, "avgRating90d", "avg_rating_90d")),
+      isMain: toBoolean(pick(item, "isMain", "is_main"), false),
+    })
+  );
 }

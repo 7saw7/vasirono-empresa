@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCompanyContext } from "@/lib/auth/company-context";
-import { getAnalyticsOverviewQuery } from "@/lib/db/queries/admin-company/analytics";
+import { getAnalyticsBranchRankingQuery } from "@/lib/db/queries/admin-company/analytics";
 import { handleRoute } from "@/lib/http/handle-route";
 import { parseWithSchema } from "@/lib/validation/parse";
 import { analyticsFiltersSchema } from "@/features/admin-company/analytics/schema";
@@ -23,6 +23,6 @@ export async function GET(request: NextRequest) {
       "Los filtros analíticos no son válidos."
     );
 
-    return getAnalyticsOverviewQuery(companyId, filters);
+    return getAnalyticsBranchRankingQuery(companyId, filters);
   });
 }
