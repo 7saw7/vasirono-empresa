@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
+  ClientApiError,
   acceptBusinessInvitationService,
   previewBusinessInvitationService,
 } from "@/features/auth/service";
@@ -31,6 +32,7 @@ export function ActivateAccountForm({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +53,7 @@ export function ActivateAccountForm({ token }: { token: string }) {
         setName(invitation.name || "");
       } catch (err) {
         if (cancelled) return;
+        setErrorCode(err instanceof ClientApiError ? err.code ?? null : null);
         setError(
           err instanceof Error
             ? err.message
@@ -80,6 +83,7 @@ export function ActivateAccountForm({ token }: { token: string }) {
 
     setSubmitting(true);
     setError(null);
+    setErrorCode(null);
     setSuccessMessage(null);
 
     if (mode === "create_credentials") {
@@ -120,6 +124,7 @@ export function ActivateAccountForm({ token }: { token: string }) {
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
+      setErrorCode(err instanceof ClientApiError ? err.code ?? null : null);
       setError(
         err instanceof Error
           ? err.message
@@ -149,11 +154,21 @@ export function ActivateAccountForm({ token }: { token: string }) {
             No pudimos validar este enlace
           </h2>
           <p className="mt-3 text-sm leading-6 text-neutral-600">{error}</p>
+          {errorCode === "BUSINESS_INVITATION_EXPIRED" ? (
+            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              Este enlace venció por seguridad. Debes solicitar que Vasirono emita una nueva invitación o reanudar el proceso desde la web pública.
+            </p>
+          ) : null}
+          {errorCode === "BUSINESS_INVITATION_ALREADY_ACCEPTED" ? (
+            <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+              Esta invitación ya fue usada. Ingresa al panel con las credenciales creadas.
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-3">
           <Link href="/login">
-            <Button variant="secondary">Ir al login</Button>
+            <Button variant="secondary">{errorCode === "BUSINESS_INVITATION_ALREADY_ACCEPTED" ? "Iniciar sesión" : "Ir al login"}</Button>
           </Link>
           <Link href={onboardingUrl}>
             <Button>Buscar o registrar negocio</Button>

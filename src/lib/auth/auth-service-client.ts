@@ -8,7 +8,7 @@ import type {
 } from "@/features/auth/types";
 
 const AUTH_SERVICE_DEFAULT_URL =
-  "http://auth-service.vasirono.svc.cluster.local:3002";
+  "http://auth-service.vasirono.svc.cluster.local";
 const AUTH_PORTAL = "company";
 
 export type AuthServiceIdentityUser = {

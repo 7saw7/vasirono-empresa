@@ -71,6 +71,17 @@ export async function recoverPasswordService(email: string): Promise<void> {
 }
 
 
+export class ClientApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = "ClientApiError";
+  }
+}
+
 export async function previewBusinessInvitationService(
   token: string
 ): Promise<BusinessInvitationPreview> {
@@ -86,8 +97,10 @@ export async function previewBusinessInvitationService(
   const payload = await response.json();
 
   if (!response.ok || !payload?.success) {
-    throw new Error(
-      payload?.error?.message || "La invitación no es válida o expiró."
+    throw new ClientApiError(
+      payload?.error?.message || "La invitación no es válida o expiró.",
+      payload?.error?.code,
+      response.status,
     );
   }
 
@@ -108,8 +121,10 @@ export async function acceptBusinessInvitationService(
   const payload = await response.json();
 
   if (!response.ok || !payload?.success) {
-    throw new Error(
-      payload?.error?.message || "No se pudo activar la cuenta empresa."
+    throw new ClientApiError(
+      payload?.error?.message || "No se pudo activar la cuenta empresa.",
+      payload?.error?.code,
+      response.status,
     );
   }
 
