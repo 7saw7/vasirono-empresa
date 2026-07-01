@@ -13,10 +13,45 @@ type RateLimitState = {
   blockedUntil: number | null;
 };
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+type MemoryEntry = {
+  value: RateLimitState;
+  expiresAt: number;
+};
+
+const memoryStore = new Map<string, MemoryEntry>();
+
+let redisClient: Redis | null | undefined;
+
+function getEnvValue(...names: string[]): string | undefined {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+
+  return undefined;
+}
+
+function getRedisClient(): Redis | null {
+  if (redisClient !== undefined) return redisClient;
+
+  const url = getEnvValue(
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_KV_REST_API_URL",
+  );
+
+  const token = getEnvValue(
+    "UPSTASH_REDIS_REST_TOKEN",
+    "UPSTASH_REDIS_REST_KV_REST_API_TOKEN",
+  );
+
+  if (!url || !token) {
+    redisClient = null;
+    return redisClient;
+  }
+
+  redisClient = new Redis({ url, token });
+  return redisClient;
+}
 
 function now(): number {
   return Date.now();
@@ -25,6 +60,44 @@ function now(): number {
 function getWindowTtlSeconds(config: RateLimitConfig): number {
   const ttlMs = Math.max(config.windowMs, config.blockDurationMs);
   return Math.ceil(ttlMs / 1000);
+}
+
+function getWindowTtlMs(config: RateLimitConfig): number {
+  return getWindowTtlSeconds(config) * 1000;
+}
+
+function readMemoryState(key: string): RateLimitState | null {
+  const currentTime = now();
+  const entry = memoryStore.get(key);
+
+  if (!entry) return null;
+
+  if (currentTime >= entry.expiresAt) {
+    memoryStore.delete(key);
+    return null;
+  }
+
+  return entry.value;
+}
+
+function writeMemoryState(
+  key: string,
+  value: RateLimitState,
+  config: RateLimitConfig,
+): void {
+  memoryStore.set(key, {
+    value,
+    expiresAt: now() + getWindowTtlMs(config),
+  });
+}
+
+function deleteMemoryState(key: string): void {
+  memoryStore.delete(key);
+}
+
+function warnRateLimitFallback(error: unknown): void {
+  if (process.env.NODE_ENV === "production") return;
+  console.warn("[rate-limit] Using memory fallback because Redis is unavailable.", error);
 }
 
 export function getRequestIp(headers: Headers): string {
@@ -43,22 +116,40 @@ export function getRequestIp(headers: Headers): string {
 }
 
 async function getRateLimitState(key: string): Promise<RateLimitState | null> {
-  return await redis.get<RateLimitState>(key);
+  const redis = getRedisClient();
+
+  if (!redis) return readMemoryState(key);
+
+  try {
+    return await redis.get<RateLimitState>(key);
+  } catch (error) {
+    warnRateLimitFallback(error);
+    return readMemoryState(key);
+  }
 }
 
 async function setRateLimitState(
   key: string,
   value: RateLimitState,
-  config: RateLimitConfig
+  config: RateLimitConfig,
 ): Promise<void> {
-  await redis.set(key, value, {
-    ex: getWindowTtlSeconds(config),
-  });
+  writeMemoryState(key, value, config);
+
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    await redis.set(key, value, {
+      ex: getWindowTtlSeconds(config),
+    });
+  } catch (error) {
+    warnRateLimitFallback(error);
+  }
 }
 
 export async function assertRateLimit(
   key: string,
-  config: RateLimitConfig
+  config: RateLimitConfig,
 ): Promise<void> {
   const currentTime = now();
   const state = await getRateLimitState(key);
@@ -69,18 +160,18 @@ export async function assertRateLimit(
     throw new AppError(
       "RATE_LIMITED",
       "Demasiados intentos. Inténtalo de nuevo en unos minutos.",
-      429
+      429,
     );
   }
 
   if (currentTime - state.windowStart >= config.windowMs) {
-    await redis.del(key);
+    await clearRateLimit(key);
   }
 }
 
 export async function recordRateLimitFailure(
   key: string,
-  config: RateLimitConfig
+  config: RateLimitConfig,
 ): Promise<void> {
   const currentTime = now();
   const state = await getRateLimitState(key);
@@ -109,5 +200,14 @@ export async function recordRateLimitFailure(
 }
 
 export async function clearRateLimit(key: string): Promise<void> {
-  await redis.del(key);
+  deleteMemoryState(key);
+
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    await redis.del(key);
+  } catch (error) {
+    warnRateLimitFallback(error);
+  }
 }
