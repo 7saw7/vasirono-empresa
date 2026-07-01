@@ -21,7 +21,7 @@ async function handleUpsertReviewResponse(
   context: RouteContext
 ) {
   return handleRoute(async () => {
-    const { companyId, userId } = await getCompanyContext("manageReviews");
+    const { companyId } = await getCompanyContext("manageReviews");
     const rawParams = await context.params;
     const body = await request.json();
 
@@ -37,12 +37,7 @@ async function handleUpsertReviewResponse(
       "La respuesta de reseña no es válida."
     );
 
-    return upsertReviewResponseQuery({
-      companyId,
-      userId,
-      reviewId,
-      input,
-    });
+    return upsertReviewResponseQuery(companyId, reviewId, input);
   });
 }
 
