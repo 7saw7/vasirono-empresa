@@ -21,6 +21,7 @@ type ServiceRequest<TBody = unknown> = {
   body?: TBody;
   token?: string | null;
   headers?: HeadersInit;
+  companyId?: number | null;
   cache?: RequestCache;
   errorCode?: string;
   errorMessage?: string;
@@ -56,7 +57,7 @@ export async function serviceRequest<TResponse, TBody = unknown>(
   input: ServiceRequest<TBody>
 ): Promise<TResponse> {
   const token = input.token ?? (await getRawSessionToken());
-  const actorHeaders = await buildServerActorHeaders(input.service);
+  const actorHeaders = await buildServerActorHeaders(input.service, input.companyId);
   const url = buildServiceUrl(input);
   const method = input.method ?? "GET";
 
@@ -166,7 +167,8 @@ function isGatewayBaseUrl(baseUrl: string): boolean {
 
 
 async function buildServerActorHeaders(
-  service: ServiceName
+  service: ServiceName,
+  companyIdOverride?: number | null
 ): Promise<Record<string, string>> {
   if (service === "auth") return {};
 
@@ -175,16 +177,18 @@ async function buildServerActorHeaders(
   if (!session) return {};
 
   const permissions = resolveCompanyPortalPermissions(session.role);
+  const activeCompanyId = companyIdOverride ?? session.companyId;
   const headers: Record<string, string> = {
     "x-user-id": session.userId,
     "x-user-email": session.email,
     "x-user-role": session.role,
     "x-role-name": session.role,
+    "x-portal": "company",
   };
 
-  if (session.companyId) {
-    headers["x-company-id"] = String(session.companyId);
-    headers["x-company-ids"] = String(session.companyId);
+  if (activeCompanyId) {
+    headers["x-company-id"] = String(activeCompanyId);
+    headers["x-company-ids"] = String(activeCompanyId);
   }
 
   if (permissions.length) {

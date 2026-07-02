@@ -29,16 +29,19 @@ export async function getCompanyDashboardQuery(companyId: number) {
     await Promise.all([
       serviceRequestOptional<unknown>({
         service: "companies",
+        companyId,
         directPath: "/api/companies/me/profile",
         gatewayPath: "/api/companies/api/companies/me/profile",
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId,
         directPath: "/api/company/analytics/dashboard",
         gatewayPath: "/api/analytics/api/company/analytics/dashboard",
       }),
       serviceRequestOptional<unknown>({
         service: "verifications",
+        companyId,
         directPath: `/api/business/companies/${companyId}/verifications/overview`,
         gatewayPath: `/api/verifications/api/business/companies/${companyId}/verifications/overview`,
       }),

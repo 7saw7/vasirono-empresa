@@ -24,36 +24,42 @@ export async function getAnalyticsOverviewQuery(
     await Promise.all([
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/overview",
         gatewayPath: "/api/analytics/api/company/analytics/overview",
         query: filters,
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/traffic-series",
         gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
         query: filters,
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/score-history",
         gatewayPath: "/api/analytics/api/company/analytics/score-history",
         query: filters,
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/funnel",
         gatewayPath: "/api/analytics/api/company/analytics/funnel",
         query: filters,
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/branches",
         gatewayPath: "/api/analytics/api/company/analytics/branches",
         query: filters,
       }),
       serviceRequestOptional<unknown>({
         service: "analytics",
+        companyId: _companyId,
         directPath: "/api/company/analytics/source-breakdown",
         gatewayPath: "/api/analytics/api/company/analytics/source-breakdown",
         query: filters,
@@ -91,6 +97,7 @@ export async function getAnalyticsBranchRankingQuery(
 ): Promise<BranchRankingItem[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
+    companyId: _companyId,
     directPath: "/api/company/analytics/branches",
     gatewayPath: "/api/analytics/api/company/analytics/branches",
     query: filters,
@@ -108,6 +115,7 @@ export async function getAnalyticsFunnelQuery(
 ): Promise<FunnelStep[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
+    companyId: _companyId,
     directPath: "/api/company/analytics/funnel",
     gatewayPath: "/api/analytics/api/company/analytics/funnel",
     query: filters,
@@ -124,6 +132,7 @@ export async function getAnalyticsTrafficSeriesQuery(
 ): Promise<AnalyticsPoint[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
+    companyId: _companyId,
     directPath: "/api/company/analytics/traffic-series",
     gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
     query: filters,

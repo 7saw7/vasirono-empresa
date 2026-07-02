@@ -25,6 +25,7 @@ export async function getCompanyVerificationsQuery(
 ): Promise<CompanyVerificationData> {
   const payload = await serviceRequest<unknown>({
     service: "verifications",
+    companyId,
     directPath: `/api/business/companies/${companyId}/verifications/overview`,
     gatewayPath: `/api/verifications/api/business/companies/${companyId}/verifications/overview`,
     errorCode: "VERIFICATIONS_SERVICE_ERROR",

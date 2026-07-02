@@ -41,6 +41,7 @@ async function fetchReviewsPayload(
 ): Promise<ReviewsPayload> {
   const payload = await serviceRequest<unknown>({
     service: "reviews",
+    companyId,
     directPath: `/api/business/companies/${companyId}/reviews`,
     gatewayPath: `/api/reviews/api/business/companies/${companyId}/reviews`,
     query: {
@@ -69,6 +70,7 @@ export async function upsertReviewResponseQuery(
 ): Promise<ReviewResponse> {
   const payload = await serviceRequest<unknown, UpsertReviewResponseInput>({
     service: "reviews",
+    companyId,
     directPath: `/api/business/companies/${companyId}/reviews/${reviewId}/response`,
     gatewayPath: `/api/reviews/api/business/companies/${companyId}/reviews/${reviewId}/response`,
     method: "PUT",

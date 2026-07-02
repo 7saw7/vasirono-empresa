@@ -36,6 +36,7 @@ export async function listBranchesQuery(
 ) {
   const payload = await serviceRequest<BranchServicePayload | unknown[]>({
     service: "branch",
+    companyId,
     directPath: "/api/company/branches",
     gatewayPath: "/api/branch/api/company/branches",
     query: {
@@ -56,6 +57,7 @@ export async function listBranchesQuery(
 export async function getBranchByIdQuery(companyId: number, branchId: number) {
   const payload = await serviceRequest<unknown>({
     service: "branch",
+    companyId,
     directPath: `/api/company/branches/${branchId}`,
     gatewayPath: `/api/branch/api/company/branches/${branchId}`,
     errorCode: "BRANCH_SERVICE_ERROR",
@@ -79,6 +81,7 @@ export async function createBranchQuery(
 
   const created = await serviceRequest<unknown, UpsertBranchInput>({
     service: "branch",
+    companyId,
     directPath: "/api/company/branches",
     gatewayPath: "/api/branch/api/company/branches",
     method: "POST",
@@ -99,6 +102,7 @@ export async function updateBranchQuery(
 
   const updated = await serviceRequest<unknown, UpsertBranchInput>({
     service: "branch",
+    companyId,
     directPath: `/api/company/branches/${branchId}`,
     gatewayPath: `/api/branch/api/company/branches/${branchId}`,
     method: "PUT",
@@ -117,6 +121,7 @@ export async function listBranchDistrictOptionsQuery(
 ): Promise<BranchDistrictOption[]> {
   const payload = await serviceRequest<unknown>({
     service: "branch",
+    companyId,
     directPath: "/api/company/branches/district-options",
     gatewayPath: "/api/branch/api/company/branches/district-options",
     errorCode: "BRANCH_SERVICE_ERROR",

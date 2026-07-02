@@ -12,6 +12,10 @@ export const SESSION_COOKIE_NAME =
 export const REFRESH_COOKIE_NAME =
   process.env.AUTH_REFRESH_COOKIE_NAME?.trim() || "vasirono_auth_refresh";
 
+export const ACTIVE_COMPANY_COOKIE_NAME =
+  process.env.AUTH_ACTIVE_COMPANY_COOKIE_NAME?.trim() ||
+  "vasirono_active_company_id";
+
 const DEFAULT_REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 export type SessionUser = {
@@ -30,17 +34,26 @@ export async function getSession(): Promise<SessionUser | null> {
   if (!rawToken) return null;
 
   try {
-    const currentSession = await getCurrentSessionFromAuthService({ rawToken });
+    const preferredCompanyId = await getActiveCompanyIdFromCookie();
+    const currentSession = await getCurrentSessionFromAuthService({
+      rawToken,
+      ...(preferredCompanyId ? { companyId: preferredCompanyId } : {}),
+    });
     const principal = currentSession.principal;
 
     if (!principal) return null;
+
+    const activeMembership = resolveActiveCompanyMembership(
+      principal,
+      preferredCompanyId
+    );
 
     return {
       userId: principal.user.id,
       name: principal.user.name,
       email: principal.user.email,
-      companyId: principal.activeCompanyId,
-      role: principal.activeRole,
+      companyId: activeMembership?.companyId ?? principal.activeCompanyId ?? null,
+      role: activeMembership?.role ?? principal.activeRole,
       sessionId: currentSession.session.sessionId,
       expiresAt: currentSession.session.expiresAt,
     };
@@ -96,6 +109,19 @@ export async function setAuthServiceSessionCookies(
     ...(getCookieDomain() ? { domain: getCookieDomain() } : {}),
     maxAge: getRefreshCookieMaxAgeSeconds(),
   });
+
+  const companyId = resolvePrincipalCompanyId(result.principal);
+
+  if (companyId) {
+    cookieStore.set(ACTIVE_COMPANY_COOKIE_NAME, String(companyId), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: getCookieSameSite(),
+      path: "/",
+      ...(getCookieDomain() ? { domain: getCookieDomain() } : {}),
+      ...(sessionExpiresAt ? { expires: sessionExpiresAt } : {}),
+    });
+  }
 }
 
 export async function clearSessionCookie(): Promise<void> {
@@ -111,6 +137,56 @@ export async function clearSessionCookie(): Promise<void> {
 
   cookieStore.set(SESSION_COOKIE_NAME, "", baseOptions);
   cookieStore.set(REFRESH_COOKIE_NAME, "", baseOptions);
+  cookieStore.set(ACTIVE_COMPANY_COOKIE_NAME, "", baseOptions);
+}
+
+
+async function getActiveCompanyIdFromCookie(): Promise<number | undefined> {
+  const cookieStore = await cookies();
+  return parsePositiveInt(cookieStore.get(ACTIVE_COMPANY_COOKIE_NAME)?.value);
+}
+
+function resolvePrincipalCompanyId(
+  principal: AuthServiceLoginResult["principal"] | null | undefined
+): number | undefined {
+  if (!principal) return undefined;
+
+  const activeCompanyId = parsePositiveInt(principal.activeCompanyId);
+
+  if (activeCompanyId) return activeCompanyId;
+
+  const activeMembership = principal.memberships?.find((item) => item.isActive);
+  return parsePositiveInt(activeMembership?.companyId);
+}
+
+function resolveActiveCompanyMembership(
+  principal: AuthServiceLoginResult["principal"],
+  preferredCompanyId?: number
+) {
+  const memberships = principal.memberships ?? [];
+
+  if (preferredCompanyId) {
+    const preferred = memberships.find(
+      (item) => item.companyId === preferredCompanyId && item.isActive
+    );
+
+    if (preferred) return preferred;
+  }
+
+  if (principal.activeCompanyId) {
+    const active = memberships.find(
+      (item) => item.companyId === principal.activeCompanyId && item.isActive
+    );
+
+    if (active) return active;
+  }
+
+  return memberships.find((item) => item.isActive);
+}
+
+function parsePositiveInt(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function parseExpiresAt(value: string | null | undefined): Date | null {

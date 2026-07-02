@@ -26,6 +26,7 @@ export async function getCompanySettingsQuery(
   const [notificationsPayload, authPayload] = await Promise.all([
     serviceRequestOptional<unknown>({
       service: "notifications",
+      companyId,
       directPath: "/api/app/notification-preferences",
       gatewayPath: "/api/notifications/api/app/notification-preferences",
     }),
@@ -49,6 +50,7 @@ export async function updateNotificationPreferencesQuery(
 ): Promise<CompanySettings> {
   const current = await serviceRequestOptional<unknown>({
     service: "notifications",
+    companyId,
     directPath: "/api/app/notification-preferences",
     gatewayPath: "/api/notifications/api/app/notification-preferences",
   });
@@ -58,6 +60,7 @@ export async function updateNotificationPreferencesQuery(
   const notifications =
     (await serviceRequestOptional<unknown, typeof body>({
       service: "notifications",
+      companyId,
       directPath: "/api/app/notification-preferences",
       gatewayPath: "/api/notifications/api/app/notification-preferences",
       method: "PATCH",

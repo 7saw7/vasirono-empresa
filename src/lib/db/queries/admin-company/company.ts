@@ -23,6 +23,7 @@ import type {
 export async function getCompanyProfileQuery(companyId: number) {
   const payload = await serviceRequest<unknown>({
     service: "companies",
+    companyId,
     directPath: "/api/companies/me/profile",
     gatewayPath: "/api/companies/api/companies/me/profile",
     errorCode: "COMPANIES_SERVICE_ERROR",
@@ -40,6 +41,7 @@ export async function updateCompanyProfileQuery(
 
   const updated = await serviceRequest<unknown, UpdateCompanyProfileInput>({
     service: "companies",
+    companyId,
     directPath: "/api/companies/me/profile",
     gatewayPath: "/api/companies/api/companies/me/profile",
     method: "PATCH",
