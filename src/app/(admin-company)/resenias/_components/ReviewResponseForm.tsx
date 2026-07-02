@@ -20,8 +20,22 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
     setError(null);
     setMessage(null);
 
+    const trimmedResponse = responseText.trim();
+
+    if (trimmedResponse.length < 3) {
+      setLoading(false);
+      setError("Escribe una respuesta de al menos 3 caracteres.");
+      return;
+    }
+
+    if (trimmedResponse.length > 2000) {
+      setLoading(false);
+      setError("La respuesta no debe superar los 2000 caracteres.");
+      return;
+    }
+
     try {
-      await upsertReviewResponse(review.id, { responseText });
+      await upsertReviewResponse(review.id, { responseText: trimmedResponse });
       setMessage(
         review.response
           ? "Respuesta actualizada correctamente."
@@ -47,6 +61,10 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
       />
 
       <div className="flex items-center justify-between gap-4">
+        <p className="text-xs text-neutral-500">
+          {responseText.trim().length}/2000 caracteres
+        </p>
+
         <div>
           {error ? (
             <p className="text-sm text-red-600">{error}</p>

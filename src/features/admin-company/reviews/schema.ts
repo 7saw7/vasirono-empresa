@@ -40,13 +40,30 @@ export const reviewResponseParamsSchema = z.object({
   ),
 });
 
-export const upsertReviewResponseSchema = z.object({
-  responseText: z
-    .string()
-    .trim()
-    .min(8, "La respuesta debe tener al menos 8 caracteres.")
-    .max(1500, "La respuesta no debe superar los 1500 caracteres."),
-});
+function toReviewResponseInput(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const row = value as Record<string, unknown>;
+  const candidate =
+    row.responseText ?? row.response_text ?? row.text ?? row.content ?? row.message;
+
+  return {
+    responseText: typeof candidate === "string" ? candidate.trim() : candidate,
+  };
+}
+
+export const upsertReviewResponseSchema = z.preprocess(
+  toReviewResponseInput,
+  z.object({
+    responseText: z
+      .string({ required_error: "La respuesta es obligatoria." })
+      .trim()
+      .min(3, "La respuesta debe tener al menos 3 caracteres.")
+      .max(2000, "La respuesta no debe superar los 2000 caracteres."),
+  })
+);
 
 export type ReviewFiltersSchema = z.infer<typeof reviewFiltersSchema>;
 export type ReviewResponseParamsSchema = z.infer<

@@ -5,6 +5,26 @@ import type {
   UpsertReviewResponseInput,
 } from "./types";
 
+function getApiErrorMessage(payload: unknown, fallback: string) {
+  if (!payload || typeof payload !== "object") return fallback;
+
+  const row = payload as {
+    error?: { message?: unknown; details?: unknown };
+  };
+
+  const details = row.error?.details;
+  if (details && typeof details === "object") {
+    const fieldErrors = details as Record<string, unknown>;
+    for (const value of Object.values(fieldErrors)) {
+      if (Array.isArray(value) && typeof value[0] === "string") {
+        return value[0];
+      }
+    }
+  }
+
+  return typeof row.error?.message === "string" ? row.error.message : fallback;
+}
+
 function toQueryString(filters: ReviewFilters, includeMetrics = false) {
   const params = new URLSearchParams();
 
@@ -47,7 +67,7 @@ export async function getReviews(
   const payload = await response.json();
 
   if (!response.ok || !payload?.success) {
-    throw new Error(payload?.error?.message || "No se pudieron cargar las reseñas.");
+    throw new Error(getApiErrorMessage(payload, "No se pudieron cargar las reseñas."));
   }
 
   return payload.data as ReviewsPayload;
@@ -62,15 +82,15 @@ export async function upsertReviewResponse(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      responseText: input.responseText.trim(),
+    }),
   });
 
   const payload = await response.json();
 
   if (!response.ok || !payload?.success) {
-    throw new Error(
-      payload?.error?.message || "No se pudo guardar la respuesta."
-    );
+    throw new Error(getApiErrorMessage(payload, "No se pudo guardar la respuesta."));
   }
 
   return payload.data as ReviewResponse;
