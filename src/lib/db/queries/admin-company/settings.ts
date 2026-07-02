@@ -26,8 +26,8 @@ export async function getCompanySettingsQuery(
   const [notificationsPayload, authPayload] = await Promise.all([
     serviceRequestOptional<unknown>({
       service: "notifications",
-      directPath: "/api/company/notification-preferences",
-      gatewayPath: "/api/notifications/api/company/notification-preferences",
+      directPath: "/api/app/notification-preferences",
+      gatewayPath: "/api/notifications/api/app/notification-preferences",
     }),
     serviceRequestOptional<unknown>({
       service: "auth",
@@ -47,14 +47,22 @@ export async function updateNotificationPreferencesQuery(
   companyId: number,
   input: UpdateNotificationPreferencesInput
 ): Promise<CompanySettings> {
+  const current = await serviceRequestOptional<unknown>({
+    service: "notifications",
+    directPath: "/api/app/notification-preferences",
+    gatewayPath: "/api/notifications/api/app/notification-preferences",
+  });
+
+  const body = buildNotificationPreferencesPatch(input, current);
+
   const notifications =
-    (await serviceRequestOptional<unknown, UpdateNotificationPreferencesInput>({
+    (await serviceRequestOptional<unknown, typeof body>({
       service: "notifications",
-      directPath: "/api/company/notification-preferences",
-      gatewayPath: "/api/notifications/api/company/notification-preferences",
-      method: "PUT",
-      body: input,
-    })) ?? input;
+      directPath: "/api/app/notification-preferences",
+      gatewayPath: "/api/notifications/api/app/notification-preferences",
+      method: "PATCH",
+      body,
+    })) ?? body;
 
   return {
     companyId,
@@ -70,22 +78,87 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
 
   return {
     emailNotifications: toBoolean(
-      pick(row, "emailNotifications", "email_notifications"),
+      pick(row, "emailNotifications", "email_notifications", "notificationsEnabled", "notifications_enabled"),
       DEFAULT_NOTIFICATIONS.emailNotifications
     ),
-    reviewAlerts: toBoolean(
-      pick(row, "reviewAlerts", "review_alerts"),
-      DEFAULT_NOTIFICATIONS.reviewAlerts
-    ),
-    verificationAlerts: toBoolean(
-      pick(row, "verificationAlerts", "verification_alerts"),
-      DEFAULT_NOTIFICATIONS.verificationAlerts
-    ),
-    weeklySummary: toBoolean(
-      pick(row, "weeklySummary", "weekly_summary"),
-      DEFAULT_NOTIFICATIONS.weeklySummary
-    ),
+    reviewAlerts: readNotificationDetail(row, ["review", "reseña", "resenia"], DEFAULT_NOTIFICATIONS.reviewAlerts),
+    verificationAlerts: readNotificationDetail(row, ["verification", "verificación", "verificacion"], DEFAULT_NOTIFICATIONS.verificationAlerts),
+    weeklySummary: readNotificationDetail(row, ["weekly", "summary", "resumen"], DEFAULT_NOTIFICATIONS.weeklySummary),
   };
+}
+
+function readNotificationDetail(
+  row: Record<string, unknown>,
+  keywords: string[],
+  fallback: boolean
+): boolean {
+  const directValue = pick(
+    row,
+    keywords.includes("review") ? "reviewAlerts" : "__none__",
+    keywords.includes("verification") ? "verificationAlerts" : "__none__",
+    keywords.includes("weekly") ? "weeklySummary" : "__none__"
+  );
+
+  if (directValue !== undefined) return toBoolean(directValue, fallback);
+
+  const details = Array.isArray(row.details) ? row.details : [];
+  const match = details.find((item) => {
+    const detail = asRecord(item);
+    const name = toStringValue(
+      pick(detail, "notificationTypeName", "notification_type_name", "name", "code"),
+      ""
+    ).toLowerCase();
+
+    return keywords.some((keyword) => name.includes(keyword));
+  });
+
+  if (!match) return fallback;
+
+  return toBoolean(pick(asRecord(match), "enabled"), fallback);
+}
+
+function buildNotificationPreferencesPatch(
+  input: UpdateNotificationPreferencesInput,
+  current: unknown
+) {
+  const currentRow = asRecord(current);
+  const details = Array.isArray(currentRow.details) ? currentRow.details : [];
+  const mappedDetails = [
+    mapNotificationDetailPatch(details, ["review", "reseña", "resenia"], input.reviewAlerts),
+    mapNotificationDetailPatch(details, ["verification", "verificación", "verificacion"], input.verificationAlerts),
+    mapNotificationDetailPatch(details, ["weekly", "summary", "resumen"], input.weeklySummary),
+  ].filter((item): item is { notificationTypeId: number; enabled: boolean } => Boolean(item));
+
+  return {
+    notificationsEnabled: input.emailNotifications,
+    ...(mappedDetails.length ? { details: mappedDetails } : {}),
+  };
+}
+
+function mapNotificationDetailPatch(
+  details: unknown[],
+  keywords: string[],
+  enabled: boolean
+): { notificationTypeId: number; enabled: boolean } | null {
+  const match = details.find((item) => {
+    const detail = asRecord(item);
+    const name = toStringValue(
+      pick(detail, "notificationTypeName", "notification_type_name", "name", "code"),
+      ""
+    ).toLowerCase();
+
+    return keywords.some((keyword) => name.includes(keyword));
+  });
+
+  if (!match) return null;
+
+  const notificationTypeId = toNumber(
+    pick(asRecord(match), "notificationTypeId", "notification_type_id")
+  );
+
+  if (!notificationTypeId) return null;
+
+  return { notificationTypeId, enabled };
 }
 
 function normalizeSecuritySettings(value: unknown): SecuritySettings {

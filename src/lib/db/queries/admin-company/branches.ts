@@ -101,7 +101,7 @@ export async function updateBranchQuery(
     service: "branch",
     directPath: `/api/company/branches/${branchId}`,
     gatewayPath: `/api/branch/api/company/branches/${branchId}`,
-    method: "PATCH",
+    method: "PUT",
     body: payload,
     errorCode: "BRANCH_SERVICE_ERROR",
     errorMessage: "No se pudo actualizar la sucursal.",

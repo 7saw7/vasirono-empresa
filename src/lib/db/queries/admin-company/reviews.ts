@@ -36,13 +36,13 @@ export async function getReviewMetricsQuery(
 }
 
 async function fetchReviewsPayload(
-  _companyId: number,
+  companyId: number,
   filters: ReviewFilters = {}
 ): Promise<ReviewsPayload> {
   const payload = await serviceRequest<unknown>({
     service: "reviews",
-    directPath: "/api/business/reviews",
-    gatewayPath: "/api/reviews/api/business/reviews",
+    directPath: `/api/business/companies/${companyId}/reviews`,
+    gatewayPath: `/api/reviews/api/business/companies/${companyId}/reviews`,
     query: {
       search: filters.search?.trim() || undefined,
       rating: filters.rating,
@@ -63,14 +63,14 @@ async function fetchReviewsPayload(
 }
 
 export async function upsertReviewResponseQuery(
-  _companyId: number,
+  companyId: number,
   reviewId: number,
   input: UpsertReviewResponseInput
 ): Promise<ReviewResponse> {
   const payload = await serviceRequest<unknown, UpsertReviewResponseInput>({
     service: "reviews",
-    directPath: `/api/business/reviews/${reviewId}/response`,
-    gatewayPath: `/api/reviews/api/business/reviews/${reviewId}/response`,
+    directPath: `/api/business/companies/${companyId}/reviews/${reviewId}/response`,
+    gatewayPath: `/api/reviews/api/business/companies/${companyId}/reviews/${reviewId}/response`,
     method: "PUT",
     body: input,
     errorCode: "REVIEWS_SERVICE_ERROR",

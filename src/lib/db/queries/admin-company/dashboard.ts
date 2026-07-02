@@ -39,8 +39,8 @@ export async function getCompanyDashboardQuery(companyId: number) {
       }),
       serviceRequestOptional<unknown>({
         service: "verifications",
-        directPath: "/api/business/verifications/overview",
-        gatewayPath: "/api/verifications/api/business/verifications/overview",
+        directPath: `/api/business/companies/${companyId}/verifications/overview`,
+        gatewayPath: `/api/verifications/api/business/companies/${companyId}/verifications/overview`,
       }),
     ]);
 
@@ -173,23 +173,30 @@ function normalizeVerificationSummary(
 ): DashboardVerificationSummary | null {
   const summary = asRecord(
     pick(verification, "summary") ??
-      pick(analytics, "verificationSummary", "verification_summary")
+      pick(analytics, "verificationSummary", "verification_summary") ??
+      verification
   );
 
   if (!Object.keys(summary).length) return null;
 
+  const request = asRecord(pick(summary, "request"));
+
   return {
-    level: toStringValue(pick(summary, "level"), "Pendiente"),
+    level: toStringValue(
+      pick(summary, "level", "verificationLevel", "verification_level"),
+      "Pendiente"
+    ),
     statusLabel: toStringValue(
-      pick(summary, "statusLabel", "status_label"),
+      pick(summary, "statusLabel", "status_label", "statusName", "status_name", "requestStatusName", "request_status_name") ??
+        pick(request, "statusName", "status_name"),
       "Sin revisión"
     ),
     statusTone: toTone(pick(summary, "statusTone", "status_tone")),
-    score: toNumber(pick(summary, "score")),
+    score: toNumber(pick(summary, "score", "verificationScore", "verification_score")),
     lastReviewAt:
-      pick(summary, "lastReviewAt", "last_review_at") === undefined
+      pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at") === undefined
         ? null
-        : String(pick(summary, "lastReviewAt", "last_review_at")),
+        : String(pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at")),
     checksCompleted: toNumber(
       pick(summary, "checksCompleted", "checks_completed")
     ),

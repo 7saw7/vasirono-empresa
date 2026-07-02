@@ -1,5 +1,5 @@
 import { AppError } from "@/lib/errors/app-error";
-import { getRawSessionToken } from "@/lib/auth/session";
+import { getRawSessionToken, getSession } from "@/lib/auth/session";
 
 type ServiceName =
   | "auth"
@@ -56,6 +56,7 @@ export async function serviceRequest<TResponse, TBody = unknown>(
   input: ServiceRequest<TBody>
 ): Promise<TResponse> {
   const token = input.token ?? (await getRawSessionToken());
+  const actorHeaders = await buildServerActorHeaders(input.service);
   const url = buildServiceUrl(input);
   const method = input.method ?? "GET";
 
@@ -68,6 +69,7 @@ export async function serviceRequest<TResponse, TBody = unknown>(
         ? { "Content-Type": "application/json" }
         : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...actorHeaders,
       ...input.headers,
     },
     ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {}),
@@ -160,6 +162,99 @@ function isGatewayBaseUrl(baseUrl: string): boolean {
     value.includes("origin-gw.vasirono.com") ||
     value === process.env.API_GATEWAY_URL?.replace(/\/+$/, "").toLowerCase()
   );
+}
+
+
+async function buildServerActorHeaders(
+  service: ServiceName
+): Promise<Record<string, string>> {
+  if (service === "auth") return {};
+
+  const session = await getSession();
+
+  if (!session) return {};
+
+  const permissions = resolveCompanyPortalPermissions(session.role);
+  const headers: Record<string, string> = {
+    "x-user-id": session.userId,
+    "x-user-email": session.email,
+    "x-user-role": session.role,
+    "x-role-name": session.role,
+  };
+
+  if (session.companyId) {
+    headers["x-company-id"] = String(session.companyId);
+    headers["x-company-ids"] = String(session.companyId);
+  }
+
+  if (permissions.length) {
+    headers["x-user-permissions"] = permissions.join(",");
+  }
+
+  return headers;
+}
+
+function resolveCompanyPortalPermissions(role: string): string[] {
+  const companyBasePermissions = [
+    "companies.profile.read",
+    "companies.profile.update",
+    "companies.taxonomy.read",
+    "companies.taxonomy.manage",
+
+    "company.branches.read",
+    "company.branches.write",
+    "company.branch_contacts.read",
+    "company.branch_contacts.write",
+    "company.branch_schedules.read",
+    "company.branch_schedules.write",
+    "company.branch_services.read",
+    "company.branch_services.write",
+    "company.branch_media.read",
+    "company.branch_media.write",
+    "company.branch_aforo.read",
+    "company.branch_aforo.write",
+
+    "analytics.company.read",
+
+    "reviews.business.read",
+    "reviews.business.respond",
+
+    "verifications.business.read_own",
+    "verifications.business.request",
+    "verifications.business.submit",
+
+    "notifications:read:own",
+    "notifications:mark:own",
+    "notifications:delete:own",
+    "notifications:preferences:manage",
+  ];
+
+  const ownerExtras = [
+    "companies.users.read",
+    "companies.users.manage",
+    "company.branch_staff.read",
+    "company.branch_staff.write",
+  ];
+
+  const managerExtras = ["companies.users.read", "company.branch_staff.read"];
+
+  if (["company_owner", "admin_company"].includes(role)) {
+    return uniqueStrings([...companyBasePermissions, ...ownerExtras]);
+  }
+
+  if (role === "company_manager") {
+    return uniqueStrings([...companyBasePermissions, ...managerExtras]);
+  }
+
+  if (["super_admin", "admin"].includes(role)) {
+    return uniqueStrings([...companyBasePermissions, ...ownerExtras]);
+  }
+
+  return [];
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 function parseJson<T>(text: string): T | null {

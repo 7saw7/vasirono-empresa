@@ -1,4 +1,4 @@
-import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import { serviceRequest } from "@/lib/http/service-client";
 import {
   asRecord,
   pick,
@@ -21,26 +21,22 @@ import type {
 } from "@/features/admin-company/verifications/types";
 
 export async function getCompanyVerificationsQuery(
-  _companyId: number
+  companyId: number
 ): Promise<CompanyVerificationData> {
-  const payload =
-    (await serviceRequestOptional<unknown>({
-      service: "verifications",
-      directPath: "/api/business/verifications/overview",
-      gatewayPath: "/api/verifications/api/business/verifications/overview",
-    })) ??
-    (await serviceRequest<unknown>({
-      service: "verifications",
-      directPath: "/api/business/verifications",
-      gatewayPath: "/api/verifications/api/business/verifications",
-      errorCode: "VERIFICATIONS_SERVICE_ERROR",
-      errorMessage: "No se pudo cargar el estado de verificación.",
-    }));
+  const payload = await serviceRequest<unknown>({
+    service: "verifications",
+    directPath: `/api/business/companies/${companyId}/verifications/overview`,
+    gatewayPath: `/api/verifications/api/business/companies/${companyId}/verifications/overview`,
+    errorCode: "VERIFICATIONS_SERVICE_ERROR",
+    errorMessage: "No se pudo cargar el estado de verificación.",
+  });
 
   const row = asRecord(payload);
 
   return {
-    summary: normalizeSummary(pick(row, "summary", "status", "verificationSummary", "verification_summary")),
+    summary: normalizeSummary(
+      pick(row, "summary", "status", "verificationSummary", "verification_summary") ?? row
+    ),
     checks: unwrapList(row, "checks", "verificationChecks", "verification_checks").map(normalizeCheck),
     documents: unwrapList(row, "documents", "verificationDocuments", "verification_documents").map(normalizeDocument),
     contacts: unwrapList(row, "contacts", "verificationContacts", "verification_contacts").map(normalizeContact),
@@ -54,18 +50,24 @@ function normalizeSummary(value: unknown): VerificationStatusSummary | null {
 
   if (!Object.keys(row).length) return null;
 
+  const request = asRecord(pick(row, "request"));
+
   return {
-    level: toStringValue(pick(row, "level"), "Pendiente"),
+    level: toStringValue(
+      pick(row, "level", "verificationLevel", "verification_level"),
+      "Pendiente"
+    ),
     statusLabel: toStringValue(
-      pick(row, "statusLabel", "status_label", "statusName", "status_name"),
+      pick(row, "statusLabel", "status_label", "statusName", "status_name", "requestStatusName", "request_status_name") ??
+        pick(request, "statusName", "status_name"),
       "Sin revisión"
     ),
     statusTone: toTone(pick(row, "statusTone", "status_tone")),
-    score: toNumber(pick(row, "score")),
+    score: toNumber(pick(row, "score", "verificationScore", "verification_score")),
     lastReviewAt:
-      pick(row, "lastReviewAt", "last_review_at") === undefined
+      pick(row, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at") === undefined
         ? null
-        : String(pick(row, "lastReviewAt", "last_review_at")),
+        : String(pick(row, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at")),
     checksCompleted: toNumber(pick(row, "checksCompleted", "checks_completed")),
     checksTotal: toNumber(pick(row, "checksTotal", "checks_total")),
   };
@@ -73,9 +75,9 @@ function normalizeSummary(value: unknown): VerificationStatusSummary | null {
 
 function normalizeCheck(row: AnyRecord): VerificationCheckItem {
   return {
-    id: toNumber(pick(row, "id", "checkId", "check_id")),
-    code: toStringValue(pick(row, "code"), ""),
-    label: toStringValue(pick(row, "label", "name"), "Revisión"),
+    id: toNumber(pick(row, "id", "checkId", "check_id", "verificationCheckId", "verification_check_id")),
+    code: toStringValue(pick(row, "code", "methodCode", "method_code"), ""),
+    label: toStringValue(pick(row, "label", "name", "methodName", "method_name"), "Revisión"),
     statusLabel: toStringValue(
       pick(row, "statusLabel", "status_label", "statusName", "status_name"),
       "Pendiente"
@@ -83,15 +85,15 @@ function normalizeCheck(row: AnyRecord): VerificationCheckItem {
     statusTone: toTone(pick(row, "statusTone", "status_tone")),
     notes: pick(row, "notes") === undefined ? null : String(pick(row, "notes")),
     reviewedAt:
-      pick(row, "reviewedAt", "reviewed_at") === undefined
+      pick(row, "reviewedAt", "reviewed_at", "verifiedAt", "verified_at") === undefined
         ? null
-        : String(pick(row, "reviewedAt", "reviewed_at")),
+        : String(pick(row, "reviewedAt", "reviewed_at", "verifiedAt", "verified_at")),
   };
 }
 
 function normalizeDocument(row: AnyRecord): VerificationDocumentItem {
   return {
-    id: toNumber(pick(row, "id", "documentId", "document_id")),
+    id: toNumber(pick(row, "id", "documentId", "document_id", "verificationDocumentId", "verification_document_id")),
     typeLabel: toStringValue(
       pick(row, "typeLabel", "type_label", "documentType", "document_type"),
       "Documento"
@@ -99,7 +101,7 @@ function normalizeDocument(row: AnyRecord): VerificationDocumentItem {
     fileName: toStringValue(pick(row, "fileName", "file_name", "name"), "archivo"),
     fileUrl: toStringValue(pick(row, "fileUrl", "file_url", "url"), ""),
     statusLabel: toStringValue(
-      pick(row, "statusLabel", "status_label", "status"),
+      pick(row, "statusLabel", "status_label", "status", "reviewStatus", "review_status"),
       "Pendiente"
     ),
     uploadedAt:
@@ -138,8 +140,8 @@ function normalizeAddressMatch(row: AnyRecord): VerificationAddressMatchItem {
 
 function normalizeTimelineItem(row: AnyRecord, index: number): VerificationTimelineItem {
   return {
-    id: toStringValue(pick(row, "id"), `timeline-${index}`),
-    title: toStringValue(pick(row, "title"), "Evento de verificación"),
+    id: toStringValue(pick(row, "id", "auditLogId", "audit_log_id"), `timeline-${index}`),
+    title: toStringValue(pick(row, "title", "action"), "Evento de verificación"),
     description: toStringValue(pick(row, "description"), ""),
     createdAt: toIsoString(pick(row, "createdAt", "created_at")),
     type: normalizeTimelineType(pick(row, "type")),
