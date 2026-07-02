@@ -262,7 +262,15 @@ export async function getPromotionGateQuery(companyId: number): Promise<Promotio
   const [currentPlan, verification, promotions] = await Promise.all([
     getCurrentPlanQuery(companyId),
     getCompanyVerificationsQuery(companyId).catch(() => null),
-    listPromotionsQuery(companyId, { page: 1, pageSize: 1, active: true }).catch(() => ({ items: [] } as PromotionListResult)),
+    listPromotionsQuery(companyId, { page: 1, pageSize: 1, active: true }).catch((): PromotionListResult => ({
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 1,
+        total: 0,
+        totalPages: 1,
+      },
+    })),
   ]);
 
   const planAllowsPromotions = Boolean(currentPlan.features.promotions && (currentPlan.promotionLimit === null || currentPlan.promotionLimit > 0));
