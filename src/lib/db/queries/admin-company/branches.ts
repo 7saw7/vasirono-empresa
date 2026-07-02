@@ -117,7 +117,7 @@ export async function updateBranchQuery(
 }
 
 export async function listBranchDistrictOptionsQuery(
-  _companyId: number
+  companyId: number
 ): Promise<BranchDistrictOption[]> {
   const payload = await serviceRequest<unknown>({
     service: "branch",
