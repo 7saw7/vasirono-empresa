@@ -3,10 +3,11 @@ import { getCompanyContext } from "@/lib/auth/company-context";
 import { handleRoute } from "@/lib/http/handle-route";
 import { AppError } from "@/lib/errors/app-error";
 import { deleteGalleryMediaQuery, updateGalleryMediaQuery } from "@/lib/db/queries/admin-company/media";
+import type { MediaOwnerType } from "@/features/admin-company/media/types";
 
 type Params = Promise<{ ownerType: string; ownerId: string; mediaId: string }>;
 
-function parseParams(raw: { ownerType: string; ownerId: string; mediaId: string }) {
+function parseParams(raw: { ownerType: string; ownerId: string; mediaId: string }): { ownerType: MediaOwnerType; ownerId: number; mediaId: number } {
   if (raw.ownerType !== "company" && raw.ownerType !== "branch") {
     throw new AppError("VALIDATION_ERROR", "Tipo de propietario inválido.", 422);
   }
@@ -15,7 +16,8 @@ function parseParams(raw: { ownerType: string; ownerId: string; mediaId: string 
   if (!Number.isInteger(ownerId) || ownerId <= 0 || !Number.isInteger(mediaId) || mediaId <= 0) {
     throw new AppError("VALIDATION_ERROR", "Parámetros inválidos.", 422);
   }
-  return { ownerType: raw.ownerType, ownerId, mediaId };
+  const ownerType: MediaOwnerType = raw.ownerType;
+  return { ownerType, ownerId, mediaId };
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Params }) {
