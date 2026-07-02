@@ -11,7 +11,10 @@ type ServiceName =
   | "notifications"
   | "billing"
   | "promotions"
-  | "media";
+  | "media"
+  | "users"
+  | "geo"
+  | "locations";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -57,6 +60,9 @@ const SERVICE_ENV_KEYS: Record<ServiceName, string[]> = {
   billing: ["BILLING_SERVICE_URL", "BILLING_SERVICE_INTERNAL_URL"],
   promotions: ["PROMOTIONS_SERVICE_URL", "PROMOTIONS_SERVICE_INTERNAL_URL"],
   media: ["MEDIA_SERVICE_URL", "MEDIA_SERVICE_INTERNAL_URL"],
+  users: ["USERS_SERVICE_URL", "USERS_SERVICE_INTERNAL_URL"],
+  geo: ["GEO_SERVICE_URL", "GEO_SERVICE_INTERNAL_URL"],
+  locations: ["LOCATIONS_SERVICE_URL", "LOCATIONS_SERVICE_INTERNAL_URL"],
 };
 
 export async function serviceRequest<TResponse, TBody = unknown>(
@@ -248,6 +254,8 @@ function resolveCompanyPortalPermissions(role: string): string[] {
     "media:company:write",
     "media:branch:read",
     "media:branch:write",
+    "media:company:delete",
+    "media:branch:delete",
 
     "notifications:read:own",
     "notifications:mark:own",

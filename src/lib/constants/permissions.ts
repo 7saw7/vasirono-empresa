@@ -10,6 +10,8 @@ export const ADMIN_COMPANY_PERMISSIONS = [
   "viewVerifications",
   "manageBilling",
   "managePromotions",
+  "manageMedia",
+  "manageTeam",
 ] as const;
 
 export type AdminCompanyPermission =
@@ -25,6 +27,8 @@ const FULL_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
   "viewVerifications",
   "manageBilling",
   "managePromotions",
+  "manageMedia",
+  "manageTeam",
 ];
 
 const READ_ONLY_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [

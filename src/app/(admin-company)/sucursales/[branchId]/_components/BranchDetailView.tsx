@@ -8,6 +8,7 @@ import { BranchProfileForm } from "./BranchProfileForm";
 import { BranchReviewsPreview } from "./BranchReviewsPreview";
 import { BranchSchedulesForm } from "./BranchSchedulesForm";
 import { BranchServicesForm } from "./BranchServicesForm";
+import { BranchOperationsPanel } from "./BranchOperationsPanel";
 
 export function BranchDetailView({ branch }: { branch: BranchDetail }) {
   return (
@@ -31,6 +32,13 @@ export function BranchDetailView({ branch }: { branch: BranchDetail }) {
       </div>
 
       <BranchMediaManager media={branch.media} />
+
+      <BranchOperationsPanel
+        branchId={branch.branchId}
+        contacts={branch.contacts}
+        schedules={branch.schedules}
+        services={branch.services}
+      />
 
       <SectionCard
         title="Ubicación"

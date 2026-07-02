@@ -6,6 +6,8 @@ import {
   Settings,
   CreditCard,
   Megaphone,
+  ImageIcon,
+  UsersRound,
   ShieldCheck,
   Store,
 } from "lucide-react";
@@ -58,6 +60,16 @@ export const ADMIN_COMPANY_NAV: AdminCompanyNavItem[] = [
     label: "Promociones",
     href: "/promociones",
     icon: Megaphone,
+  },
+  {
+    label: "Galería",
+    href: "/galeria",
+    icon: ImageIcon,
+  },
+  {
+    label: "Equipo",
+    href: "/equipo",
+    icon: UsersRound,
   },
   {
     label: "Configuración",
