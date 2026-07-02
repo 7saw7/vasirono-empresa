@@ -294,7 +294,7 @@ export async function getPromotionGateQuery(companyId: number): Promise<Promotio
     verifiedForPromotions,
     canCreatePromotions: planAllowsPromotions && verifiedForPromotions,
     reasons,
-    planLabel: currentPlan.planName,
+    planLabel: currentPlan.planName ?? currentPlan.plan.toUpperCase(),
     promotionLimit: currentPlan.promotionLimit,
     currentActivePromotions: promotions.pagination?.total ?? promotions.items.length,
     verificationLabel: summary?.statusLabel ?? "Sin verificación aprobada",
