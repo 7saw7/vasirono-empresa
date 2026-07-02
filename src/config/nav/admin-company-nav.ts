@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Settings,
   CreditCard,
+  Megaphone,
   ShieldCheck,
   Store,
 } from "lucide-react";
@@ -52,6 +53,11 @@ export const ADMIN_COMPANY_NAV: AdminCompanyNavItem[] = [
     label: "Plan y pagos",
     href: "/plan",
     icon: CreditCard,
+  },
+  {
+    label: "Promociones",
+    href: "/promociones",
+    icon: Megaphone,
   },
   {
     label: "Configuración",

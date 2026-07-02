@@ -9,7 +9,9 @@ type ServiceName =
   | "reviews"
   | "verifications"
   | "notifications"
-  | "billing";
+  | "billing"
+  | "promotions"
+  | "media";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -53,6 +55,8 @@ const SERVICE_ENV_KEYS: Record<ServiceName, string[]> = {
     "NOTIFICATIONS_SERVICE_INTERNAL_URL",
   ],
   billing: ["BILLING_SERVICE_URL", "BILLING_SERVICE_INTERNAL_URL"],
+  promotions: ["PROMOTIONS_SERVICE_URL", "PROMOTIONS_SERVICE_INTERNAL_URL"],
+  media: ["MEDIA_SERVICE_URL", "MEDIA_SERVICE_INTERNAL_URL"],
 };
 
 export async function serviceRequest<TResponse, TBody = unknown>(
@@ -231,6 +235,20 @@ function resolveCompanyPortalPermissions(role: string): string[] {
 
     "billing.business.read",
 
+    "promotions:business:read",
+    "promotions:business:create",
+    "promotions:business:update",
+    "promotions:business:activate",
+    "promotions:business:pause",
+    "promotions:business:delete",
+    "promotions:business:validate-redemption",
+
+    "media:types:read",
+    "media:company:read",
+    "media:company:write",
+    "media:branch:read",
+    "media:branch:write",
+
     "notifications:read:own",
     "notifications:mark:own",
     "notifications:delete:own",
@@ -243,6 +261,8 @@ function resolveCompanyPortalPermissions(role: string): string[] {
     "company.branch_staff.read",
     "company.branch_staff.write",
     "billing.business.checkout.create",
+    "media:company:delete",
+    "media:branch:delete",
   ];
 
   const managerExtras = ["companies.users.read", "company.branch_staff.read"];
