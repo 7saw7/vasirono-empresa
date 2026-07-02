@@ -8,7 +8,8 @@ type ServiceName =
   | "analytics"
   | "reviews"
   | "verifications"
-  | "notifications";
+  | "notifications"
+  | "billing";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -51,6 +52,7 @@ const SERVICE_ENV_KEYS: Record<ServiceName, string[]> = {
     "NOTIFICATIONS_SERVICE_URL",
     "NOTIFICATIONS_SERVICE_INTERNAL_URL",
   ],
+  billing: ["BILLING_SERVICE_URL", "BILLING_SERVICE_INTERNAL_URL"],
 };
 
 export async function serviceRequest<TResponse, TBody = unknown>(
@@ -227,6 +229,8 @@ function resolveCompanyPortalPermissions(role: string): string[] {
     "verifications.business.request",
     "verifications.business.submit",
 
+    "billing.business.read",
+
     "notifications:read:own",
     "notifications:mark:own",
     "notifications:delete:own",
@@ -238,6 +242,7 @@ function resolveCompanyPortalPermissions(role: string): string[] {
     "companies.users.manage",
     "company.branch_staff.read",
     "company.branch_staff.write",
+    "billing.business.checkout.create",
   ];
 
   const managerExtras = ["companies.users.read", "company.branch_staff.read"];

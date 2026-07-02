@@ -5,5 +5,6 @@ export const ADMIN_COMPANY_ROUTES = {
   reviews: "/resenias",
   analytics: "/analytics",
   verifications: "/verificaciones",
+  billing: "/plan",
   settings: "/configuracion",
 } as const;

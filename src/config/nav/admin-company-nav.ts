@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Settings,
+  CreditCard,
   ShieldCheck,
   Store,
 } from "lucide-react";
@@ -46,6 +47,11 @@ export const ADMIN_COMPANY_NAV: AdminCompanyNavItem[] = [
     label: "Verificaciones",
     href: "/verificaciones",
     icon: ShieldCheck,
+  },
+  {
+    label: "Plan y pagos",
+    href: "/plan",
+    icon: CreditCard,
   },
   {
     label: "Configuración",
