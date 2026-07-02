@@ -92,6 +92,13 @@ export async function setAuthServiceSessionCookies(
   const cookieStore = await cookies();
   const sessionExpiresAt = parseExpiresAt(result.session.expiresAt);
 
+  // Limpia cookies anteriores antes de escribir la nueva sesión.
+  // Esto evita sesiones cruzadas cuando alguna versión anterior dejó cookies
+  // con otro dominio o scope.
+  expireAuthCookie(cookieStore, SESSION_COOKIE_NAME);
+  expireAuthCookie(cookieStore, REFRESH_COOKIE_NAME);
+  expireAuthCookie(cookieStore, ACTIVE_COMPANY_COOKIE_NAME);
+
   cookieStore.set(SESSION_COOKIE_NAME, result.session.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -126,18 +133,35 @@ export async function setAuthServiceSessionCookies(
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
+
+  expireAuthCookie(cookieStore, SESSION_COOKIE_NAME);
+  expireAuthCookie(cookieStore, REFRESH_COOKIE_NAME);
+  expireAuthCookie(cookieStore, ACTIVE_COMPANY_COOKIE_NAME);
+}
+
+function expireAuthCookie(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  name: string
+): void {
   const baseOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: getCookieSameSite(),
     path: "/",
-    ...(getCookieDomain() ? { domain: getCookieDomain() } : {}),
     expires: new Date(0),
   } as const;
 
-  cookieStore.set(SESSION_COOKIE_NAME, "", baseOptions);
-  cookieStore.set(REFRESH_COOKIE_NAME, "", baseOptions);
-  cookieStore.set(ACTIVE_COMPANY_COOKIE_NAME, "", baseOptions);
+  // Cookie host-only actual.
+  cookieStore.set(name, "", baseOptions);
+
+  // Cookies con dominio explícito. Esto ayuda cuando una versión anterior usó
+  // AUTH_COOKIE_DOMAIN=.vasirono.com y otra usó cookie host-only, o viceversa.
+  for (const domain of getCookieDeleteDomains()) {
+    cookieStore.set(name, "", {
+      ...baseOptions,
+      domain,
+    });
+  }
 }
 
 
@@ -209,6 +233,20 @@ function getRefreshCookieMaxAgeSeconds(): number {
 
 function getCookieDomain(): string | undefined {
   return process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
+}
+
+function getCookieDeleteDomains(): string[] {
+  const candidates = [
+    getCookieDomain(),
+    ...(process.env.AUTH_COOKIE_DELETE_DOMAINS || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+    ".vasirono.com",
+    "vasirono.com",
+  ];
+
+  return [...new Set(candidates.filter(Boolean) as string[])];
 }
 
 function getCookieSameSite(): "lax" | "strict" | "none" {

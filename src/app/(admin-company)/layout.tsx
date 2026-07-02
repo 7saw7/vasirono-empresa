@@ -14,5 +14,5 @@ export default async function AdminCompanyLayout({
     redirect("/login");
   }
 
-  return <AdminCompanyShell>{children}</AdminCompanyShell>;
+  return <AdminCompanyShell session={session}>{children}</AdminCompanyShell>;
 }

@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import type { SessionUser } from "@/lib/auth/session";
 import { AdminCompanyNav } from "./AdminCompanyNav";
+import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
 
-export function AdminCompanyMobileHeader() {
+type AdminCompanyMobileHeaderProps = {
+  session: SessionUser;
+};
+
+export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -87,11 +93,15 @@ export function AdminCompanyMobileHeader() {
             <div className="border-t border-neutral-200 p-4">
               <div className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                  Menú rápido
+                  Sesión empresa
                 </p>
-                <p className="mt-2 text-sm leading-5 text-neutral-600">
-                  Usa este panel para administrar tu negocio desde móvil o escritorio.
+                <p className="mt-2 truncate text-sm font-semibold text-neutral-950">
+                  {session.email}
                 </p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Empresa activa: {session.companyId ?? "sin empresa"}
+                </p>
+                <AdminCompanyLogoutButton compact />
               </div>
             </div>
           </aside>
