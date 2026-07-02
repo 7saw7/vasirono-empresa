@@ -58,7 +58,7 @@ export const upsertReviewResponseSchema = z.preprocess(
   toReviewResponseInput,
   z.object({
     responseText: z
-      .string({ required_error: "La respuesta es obligatoria." })
+      .string("La respuesta es obligatoria.")
       .trim()
       .min(3, "La respuesta debe tener al menos 3 caracteres.")
       .max(2000, "La respuesta no debe superar los 2000 caracteres."),
