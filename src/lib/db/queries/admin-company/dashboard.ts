@@ -183,6 +183,30 @@ function normalizeVerificationSummary(
   if (!Object.keys(summary).length) return null;
 
   const request = asRecord(pick(summary, "request"));
+  const checks = asArray(pick(verification, "checks"));
+  const flags = asRecord(pick(verification, "flags"));
+
+  const statusCode = toStringValue(
+    pick(summary, "statusCode", "status_code") ?? pick(request, "statusCode", "status_code"),
+    ""
+  ).toLowerCase();
+
+  const completedChecks = checks.filter((item) => {
+    const check = asRecord(item);
+    const code = toStringValue(pick(check, "statusCode", "status_code"), "").toLowerCase();
+    return Boolean(pick(check, "verifiedAt", "verified_at")) ||
+      ["verified", "approved", "completed", "passed", "accepted"].includes(code);
+  }).length;
+
+  const completedFlags = Object.values(flags).filter(Boolean).length;
+  const checksCompleted = toNumber(
+    pick(summary, "checksCompleted", "checks_completed"),
+    Math.max(completedChecks, completedFlags)
+  );
+  const checksTotal = toNumber(
+    pick(summary, "checksTotal", "checks_total"),
+    Math.max(checks.length, 4)
+  );
 
   return {
     level: toStringValue(
@@ -194,36 +218,55 @@ function normalizeVerificationSummary(
         pick(request, "statusName", "status_name"),
       "Sin revisión"
     ),
-    statusTone: toTone(pick(summary, "statusTone", "status_tone")),
+    statusTone: toTone(
+      pick(summary, "statusTone", "status_tone") ?? inferVerificationTone(statusCode)
+    ),
     score: toNumber(pick(summary, "score", "verificationScore", "verification_score")),
     lastReviewAt:
       pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at") === undefined
         ? null
         : String(pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at")),
-    checksCompleted: toNumber(
-      pick(summary, "checksCompleted", "checks_completed")
-    ),
-    checksTotal: toNumber(pick(summary, "checksTotal", "checks_total")),
+    checksCompleted,
+    checksTotal,
   };
 }
 
+function inferVerificationTone(
+  statusCode: string
+): DashboardVerificationSummary["statusTone"] {
+  if (["approved", "verified", "completed", "accepted"].includes(statusCode)) {
+    return "success";
+  }
+
+  if (["rejected", "failed", "cancelled", "expired"].includes(statusCode)) {
+    return "danger";
+  }
+
+  if (["submitted", "in_review", "review", "pending", "started", "draft"].includes(statusCode)) {
+    return "warning";
+  }
+
+  return "default";
+}
+
 function normalizeBranchPerformance(row: AnyRecord): DashboardBranchPerformanceItem[] {
-  return asArray(pick(row, "branchPerformance", "branch_performance", "branches")).map(
-    (item) => ({
-      branchId: toNumber(pick(item, "branchId", "branch_id", "id")),
-      branchName: toStringValue(
-        pick(item, "branchName", "branch_name", "name"),
-        "Sucursal"
-      ),
-      districtName: toStringValue(
-        pick(item, "districtName", "district_name"),
-        "Sin distrito"
-      ),
-      finalScore: toNumber(pick(item, "finalScore", "final_score")),
-      visits30d: toNumber(pick(item, "visits30d", "visits_30d")),
-      reviews90d: toNumber(pick(item, "reviews90d", "reviews_90d")),
-      avgRating90d: toNumber(pick(item, "avgRating90d", "avg_rating_90d")),
-      isMain: toBoolean(pick(item, "isMain", "is_main"), false),
-    })
-  );
+  return asArray(
+    pick(row, "branchPerformance", "branch_performance", "branches") ??
+      pick(row, "branchRanking", "branch_ranking")
+  ).map((item) => ({
+    branchId: toNumber(pick(item, "branchId", "branch_id", "id")),
+    branchName: toStringValue(
+      pick(item, "branchName", "branch_name", "name"),
+      "Sucursal"
+    ),
+    districtName: toStringValue(
+      pick(item, "districtName", "district_name"),
+      "Sin distrito"
+    ),
+    finalScore: toNumber(pick(item, "finalScore", "final_score")),
+    visits30d: toNumber(pick(item, "visits30d", "visits_30d")),
+    reviews90d: toNumber(pick(item, "reviews90d", "reviews_90d")),
+    avgRating90d: toNumber(pick(item, "avgRating90d", "avg_rating_90d")),
+    isMain: toBoolean(pick(item, "isMain", "is_main"), false),
+  }));
 }
