@@ -1,4 +1,5 @@
-import { AppError } from "@/lib/errors/app-error";
+import { AppError, isAppError } from "@/lib/errors/app-error";
+import { logger } from "@/lib/observability/logger";
 import { getRawSessionToken, getSession } from "@/lib/auth/session";
 
 type ServiceName =
@@ -127,7 +128,31 @@ export async function serviceRequestOptional<TResponse, TBody = unknown>(
 ): Promise<TResponse | null> {
   try {
     return await serviceRequest<TResponse, TBody>(input);
-  } catch {
+  } catch (error) {
+    const errorMeta = isAppError(error)
+      ? {
+          name: error.name,
+          code: error.code,
+          status: error.status,
+          message: error.message,
+        }
+      : error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : { value: error };
+
+    logger.warn("optional_service_request_failed", {
+      service: input.service,
+      method: input.method ?? "GET",
+      directPath: input.directPath,
+      gatewayPath: input.gatewayPath,
+      companyId: input.companyId ?? null,
+      error: errorMeta,
+    });
+
     return null;
   }
 }
