@@ -4,6 +4,11 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatNumber } from "@/lib/utils/numbers";
 
+function metricText(value: number | null | undefined, decimals = 0) {
+  if (value === null || value === undefined) return "Sin datos";
+  return decimals > 0 ? value.toFixed(decimals) : formatNumber(value);
+}
+
 export function BranchCard({ branch }: { branch: BranchListItem }) {
   return (
     <SectionCard>
@@ -42,7 +47,7 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
               Score
             </p>
             <p className="mt-1 text-lg font-semibold text-neutral-950">
-              {(branch.finalScore ?? 0).toFixed(1)}
+              {metricText(branch.finalScore, 1)}
             </p>
           </div>
 
@@ -51,7 +56,7 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
               Visitas 30d
             </p>
             <p className="mt-1 text-lg font-semibold text-neutral-950">
-              {formatNumber(branch.visits30d ?? 0)}
+              {metricText(branch.visits30d)}
             </p>
           </div>
 
@@ -60,7 +65,7 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
               Rating 90d
             </p>
             <p className="mt-1 text-lg font-semibold text-neutral-950">
-              {(branch.avgRating90d ?? 0).toFixed(1)}
+              {metricText(branch.avgRating90d, 1)}
             </p>
           </div>
         </div>

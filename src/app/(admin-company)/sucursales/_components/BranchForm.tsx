@@ -33,6 +33,11 @@ const initialForm: BranchFormState = {
   isActive: "true",
 };
 
+function optionalPayloadString(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function mapApiErrors(details: unknown): FieldErrors {
   if (!details || typeof details !== "object") return {};
 
@@ -138,11 +143,11 @@ export function BranchForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          address: form.address,
-          phone: form.phone,
-          email: form.email,
+          name: form.name.trim(),
+          description: optionalPayloadString(form.description),
+          address: form.address.trim(),
+          phone: optionalPayloadString(form.phone),
+          email: optionalPayloadString(form.email),
           districtId: Number(form.districtId),
           isMain: form.isMain === "true",
           isActive: form.isActive === "true",

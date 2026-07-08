@@ -13,6 +13,7 @@ export type BranchListItem = {
   finalScore?: number | null;
   visits30d?: number | null;
   avgRating90d?: number | null;
+  reviews90d?: number | null;
 };
 
 export type BranchDetail = BranchListItem & {

@@ -30,6 +30,25 @@ type BranchServicePayload = {
   data?: unknown[];
 };
 
+function optionalString(value: string | undefined | null) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function sanitizeUpsertBranchPayload(input: UpsertBranchInput) {
+  return {
+    name: input.name.trim(),
+    description: optionalString(input.description),
+    address: input.address.trim(),
+    phone: optionalString(input.phone),
+    email: optionalString(input.email),
+    districtId: input.districtId,
+    isMain: input.isMain,
+    isActive: input.isActive,
+  };
+}
+
 export async function listBranchesQuery(
   companyId: number,
   filters: BranchListFilters = {}
@@ -77,9 +96,9 @@ export async function createBranchQuery(
   companyId: number,
   input: UpsertBranchInput
 ) {
-  const payload = validateUpsertBranchInput(input);
+  const payload = sanitizeUpsertBranchPayload(validateUpsertBranchInput(input));
 
-  const created = await serviceRequest<unknown, UpsertBranchInput>({
+  const created = await serviceRequest<unknown, ReturnType<typeof sanitizeUpsertBranchPayload>>({
     service: "branch",
     companyId,
     directPath: "/api/company/branches",
@@ -98,9 +117,9 @@ export async function updateBranchQuery(
   branchId: number,
   input: UpsertBranchInput
 ) {
-  const payload = validateUpsertBranchInput(input);
+  const payload = sanitizeUpsertBranchPayload(validateUpsertBranchInput(input));
 
-  const updated = await serviceRequest<unknown, UpsertBranchInput>({
+  const updated = await serviceRequest<unknown, ReturnType<typeof sanitizeUpsertBranchPayload>>({
     service: "branch",
     companyId,
     directPath: `/api/company/branches/${branchId}`,
@@ -178,6 +197,7 @@ function normalizeBranchListItem(
     avgRating90d: toNullableNumber(
       pick(row, "avgRating90d", "avg_rating_90d")
     ),
+    reviews90d: toNullableNumber(pick(row, "reviews90d", "reviews_90d")),
   };
 }
 
