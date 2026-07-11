@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Building2, Menu, X } from "lucide-react";
 import type { SessionUser } from "@/lib/auth/session";
 import { AdminCompanyNav } from "./AdminCompanyNav";
 import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 type AdminCompanyMobileHeaderProps = {
   session: SessionUser;
@@ -33,26 +34,37 @@ export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderPr
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl lg:hidden dark:border-slate-800 dark:bg-[#0b1118]/90">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/dashboard" className="min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-neutral-300">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-              Vasirono
-            </p>
-            <p className="truncate text-base font-semibold tracking-tight text-neutral-950">
-              Admin Company
-            </p>
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-sm">
+              <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-base font-bold tracking-tight text-slate-950 dark:text-white">
+                Vasirono
+              </span>
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Business panel
+              </span>
+            </span>
           </Link>
 
-          <button
-            type="button"
-            aria-label="Abrir menú del panel"
-            aria-expanded={open}
-            onClick={() => setOpen(true)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-950 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+            <button
+              type="button"
+              aria-label="Abrir menú del panel"
+              aria-expanded={open}
+              onClick={() => setOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-sky-300 hover:text-sky-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-700 dark:hover:text-sky-400"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -60,46 +72,44 @@ export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderPr
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menú del panel empresa">
           <button
             type="button"
-            className="absolute inset-0 bg-neutral-950/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
             aria-label="Cerrar menú"
             onClick={() => setOpen(false)}
           />
 
-          <aside className="relative flex h-full w-[min(88vw,340px)] flex-col border-r border-neutral-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-5">
-              <Link href="/dashboard" className="min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-neutral-300">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                  Vasirono
-                </p>
-                <p className="mt-1 truncate text-lg font-semibold tracking-tight text-neutral-950">
-                  Admin Company
-                </p>
+          <aside className="relative flex h-full w-[min(88vw,340px)] flex-col border-r border-slate-200 bg-[#f8fafc] shadow-2xl dark:border-slate-800 dark:bg-[#080e14]">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+              <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white">
+                  <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-base font-bold text-slate-950 dark:text-white">Vasirono</span>
+                  <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">Business panel</span>
+                </span>
               </Link>
 
               <button
                 type="button"
                 aria-label="Cerrar menú"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-950 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-sky-300 hover:text-sky-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-5">
+            <div className="flex-1 overflow-y-auto px-3 py-5">
               <AdminCompanyNav compact onNavigate={() => setOpen(false)} />
             </div>
 
-            <div className="border-t border-neutral-200 p-4">
-              <div className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                  Sesión empresa
+            <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">
+                  {session.name}
                 </p>
-                <p className="mt-2 truncate text-sm font-semibold text-neutral-950">
+                <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
                   {session.email}
-                </p>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Empresa activa: {session.companyId ?? "sin empresa"}
                 </p>
                 <AdminCompanyLogoutButton compact />
               </div>

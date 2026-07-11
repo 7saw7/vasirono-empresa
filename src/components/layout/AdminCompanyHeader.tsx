@@ -12,14 +12,14 @@ export function AdminCompanyHeader({
   actions,
 }: AdminCompanyHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm md:flex-row md:items-start md:justify-between">
+    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px] dark:text-white">
           {title}
         </h1>
 
         {description ? (
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
             {description}
           </p>
         ) : null}

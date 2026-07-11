@@ -17,19 +17,19 @@ type ChildWithClassNameProps = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-neutral-950 text-white hover:bg-neutral-800 disabled:bg-neutral-300",
+    "bg-sky-600 text-white hover:bg-sky-500 disabled:bg-slate-300 dark:disabled:bg-slate-700",
   secondary:
-    "bg-white text-neutral-950 border border-neutral-200 hover:bg-neutral-50 disabled:text-neutral-400",
+    "border border-slate-200 bg-white text-slate-950 hover:bg-slate-50 disabled:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800",
   ghost:
-    "bg-transparent text-neutral-700 hover:bg-neutral-100 disabled:text-neutral-400",
+    "bg-transparent text-slate-700 hover:bg-slate-100 disabled:text-slate-400 dark:text-slate-300 dark:hover:bg-slate-800",
   danger:
-    "bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300",
+    "bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300 dark:disabled:bg-red-950",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "h-9 px-3 text-sm rounded-xl",
   md: "h-10 px-4 text-sm rounded-xl",
-  lg: "h-11 px-5 text-sm rounded-2xl",
+  lg: "h-11 px-5 text-sm rounded-xl",
 };
 
 export function Button({
@@ -40,7 +40,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex items-center justify-center font-medium transition focus:outline-none focus:ring-2 focus:ring-neutral-300 disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center font-semibold transition focus:outline-none focus:ring-2 focus:ring-sky-500/35 disabled:cursor-not-allowed",
     variantClasses[variant],
     sizeClasses[size],
     className
