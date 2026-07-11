@@ -370,7 +370,7 @@ export default function HomePage() {
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Link
                     href="/login"
-                    className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_16px_34px_-16px_rgba(15,23,42,0.75)] transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:bg-white dark:text-slate-950 dark:hover:bg-blue-100"
+                    className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 px-5 text-sm font-semibold text-white shadow-[0_16px_36px_-16px_rgba(37,99,235,0.9)] transition duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:via-blue-700 hover:to-indigo-700 hover:shadow-[0_20px_42px_-18px_rgba(37,99,235,0.95)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/45 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-blue-500 dark:via-blue-500 dark:to-indigo-500 dark:text-white dark:hover:from-blue-400 dark:hover:via-blue-500 dark:hover:to-indigo-400 dark:focus-visible:ring-offset-[#080f16]"
                   >
                     <LockKeyhole
                       className="h-[18px] w-[18px]"
@@ -522,7 +522,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/login"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white shadow-[0_16px_34px_-18px_rgba(37,99,235,0.9)] transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 px-6 text-sm font-semibold text-white shadow-[0_16px_36px_-18px_rgba(37,99,235,0.9)] transition duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:via-blue-700 hover:to-indigo-700 hover:shadow-[0_20px_42px_-18px_rgba(37,99,235,0.95)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/45 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-blue-500 dark:via-blue-500 dark:to-indigo-500 dark:text-white dark:hover:from-blue-400 dark:hover:via-blue-500 dark:hover:to-indigo-400 dark:focus-visible:ring-offset-[#080f16]"
               >
                 Acceder ahora
                 <ArrowRight className="h-4 w-4" />

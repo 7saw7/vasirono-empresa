@@ -56,7 +56,7 @@ export function Navbar() {
 
           <Link
             href="/login"
-            className="group inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-slate-950 px-3.5 text-sm font-semibold text-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:bg-white dark:text-slate-950 dark:hover:bg-blue-100 sm:px-4"
+            className="group inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 px-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-14px_rgba(37,99,235,0.9)] transition duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:via-blue-700 hover:to-indigo-700 hover:shadow-[0_16px_34px_-16px_rgba(37,99,235,0.95)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/45 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-blue-500 dark:via-blue-500 dark:to-indigo-500 dark:text-white dark:hover:from-blue-400 dark:hover:via-blue-500 dark:hover:to-indigo-400 dark:focus-visible:ring-offset-[#080f16] sm:px-4"
           >
             <span>Acceder</span>
             <ArrowRight
