@@ -56,5 +56,11 @@ export function mapDashboardData(raw: RawDashboardPayload): DashboardData {
       avgRating90d: item.avg_rating_90d,
       isMain: item.is_main,
     })),
+    sync: {
+      status: raw.sync.status,
+      fetchedAt: raw.sync.fetched_at,
+      analyticsGeneratedAt: raw.sync.analytics_generated_at,
+      services: raw.sync.services,
+    },
   };
 }

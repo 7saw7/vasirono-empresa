@@ -54,6 +54,20 @@ export type DashboardBranchPerformanceItem = {
   isMain: boolean;
 };
 
+
+export type DashboardServiceStatus = "available" | "empty" | "unavailable";
+
+export type DashboardSyncState = {
+  status: "synced" | "partial";
+  fetchedAt: string;
+  analyticsGeneratedAt: string;
+  services: {
+    companies: "available";
+    analytics: "available";
+    verifications: DashboardServiceStatus;
+  };
+};
+
 export type DashboardData = {
   companyName: string;
   kpis: DashboardKpi[];
@@ -61,4 +75,5 @@ export type DashboardData = {
   companyScore: DashboardCompanyScore | null;
   verificationSummary: DashboardVerificationSummary | null;
   branchPerformance: DashboardBranchPerformanceItem[];
+  sync: DashboardSyncState;
 };

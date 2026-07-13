@@ -17,6 +17,13 @@ function isStatusTone(
   );
 }
 
+
+function isDashboardServiceStatus(
+  value: unknown
+): value is "available" | "empty" | "unavailable" {
+  return value === "available" || value === "empty" || value === "unavailable";
+}
+
 export function validateDashboardData(input: unknown): DashboardData {
   if (!input || typeof input !== "object") {
     throw new AppError(
@@ -52,6 +59,22 @@ export function validateDashboardData(input: unknown): DashboardData {
     throw new AppError(
       "VALIDATION_ERROR",
       "branchPerformance debe ser un arreglo.",
+      422
+    );
+  }
+
+  if (
+    !data.sync ||
+    (data.sync.status !== "synced" && data.sync.status !== "partial") ||
+    typeof data.sync.fetchedAt !== "string" ||
+    typeof data.sync.analyticsGeneratedAt !== "string" ||
+    data.sync.services?.companies !== "available" ||
+    data.sync.services?.analytics !== "available" ||
+    !isDashboardServiceStatus(data.sync.services?.verifications)
+  ) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "El estado de sincronización del dashboard es inválido.",
       422
     );
   }

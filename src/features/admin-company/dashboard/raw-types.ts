@@ -52,6 +52,18 @@ export type RawDashboardBranchPerformanceItem = {
   is_main: boolean;
 };
 
+
+export type RawDashboardSyncState = {
+  status: "synced" | "partial";
+  fetched_at: string;
+  analytics_generated_at: string;
+  services: {
+    companies: "available";
+    analytics: "available";
+    verifications: "available" | "empty" | "unavailable";
+  };
+};
+
 export type RawDashboardPayload = {
   company_name: string;
   kpis: RawDashboardKpi[];
@@ -59,4 +71,5 @@ export type RawDashboardPayload = {
   company_score: RawDashboardCompanyScore | null;
   verification_summary: RawDashboardVerificationSummary | null;
   branch_performance: RawDashboardBranchPerformanceItem[];
+  sync: RawDashboardSyncState;
 };

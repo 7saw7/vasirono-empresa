@@ -1,4 +1,7 @@
-import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import {
+  serviceRequest,
+  serviceRequestOptionalResult,
+} from "@/lib/http/service-client";
 import {
   asArray,
   asRecord,
@@ -25,7 +28,7 @@ export async function getDashboardQuery(companyId: number) {
 }
 
 export async function getCompanyDashboardQuery(companyId: number) {
-  const [companyPayload, analyticsPayload, verificationPayload] =
+  const [companyPayload, analyticsPayload, verificationResult] =
     await Promise.all([
       serviceRequest<unknown>({
         service: "companies",
@@ -43,7 +46,7 @@ export async function getCompanyDashboardQuery(companyId: number) {
         errorCode: "DASHBOARD_ANALYTICS_UNAVAILABLE",
         errorMessage: "No se pudo cargar la analítica del dashboard.",
       }),
-      serviceRequestOptional<unknown>({
+      serviceRequestOptionalResult<unknown>({
         service: "verifications",
         companyId,
         directPath: `/api/business/companies/${companyId}/verifications/overview`,
@@ -53,7 +56,9 @@ export async function getCompanyDashboardQuery(companyId: number) {
 
   const company = asRecord(companyPayload);
   const analytics = asRecord(analyticsPayload);
-  const verification = asRecord(verificationPayload);
+  const verification = asRecord(verificationResult.data);
+  const fetchedAt = new Date().toISOString();
+  const analyticsSync = asRecord(pick(analytics, "sync"));
 
   const data: DashboardData = {
     companyName: toStringValue(
@@ -66,6 +71,19 @@ export async function getCompanyDashboardQuery(companyId: number) {
     companyScore: normalizeCompanyScore(analytics),
     verificationSummary: normalizeVerificationSummary(verification, analytics),
     branchPerformance: normalizeBranchPerformance(analytics),
+    sync: {
+      status:
+        verificationResult.status === "unavailable" ? "partial" : "synced",
+      fetchedAt,
+      analyticsGeneratedAt: toIsoString(
+        pick(analyticsSync, "generatedAt", "generated_at") ?? fetchedAt
+      ),
+      services: {
+        companies: "available",
+        analytics: "available",
+        verifications: verificationResult.status,
+      },
+    },
   };
 
   return validateDashboardData(data);

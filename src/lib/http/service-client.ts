@@ -123,6 +123,48 @@ export async function serviceRequest<TResponse, TBody = unknown>(
   return payload as TResponse;
 }
 
+
+export type OptionalServiceRequestResult<TResponse> =
+  | { status: "available"; data: TResponse }
+  | { status: "empty" | "unavailable"; data: null };
+
+export async function serviceRequestOptionalResult<TResponse, TBody = unknown>(
+  input: ServiceRequest<TBody>
+): Promise<OptionalServiceRequestResult<TResponse>> {
+  try {
+    const data = await serviceRequest<TResponse, TBody>(input);
+    return { status: "available", data };
+  } catch (error) {
+    const status = isAppError(error) && error.status === 404 ? "empty" : "unavailable";
+    const errorMeta = isAppError(error)
+      ? {
+          name: error.name,
+          code: error.code,
+          status: error.status,
+          message: error.message,
+        }
+      : error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : { value: error };
+
+    logger.warn("optional_service_request_failed", {
+      service: input.service,
+      method: input.method ?? "GET",
+      directPath: input.directPath,
+      gatewayPath: input.gatewayPath,
+      companyId: input.companyId ?? null,
+      resultStatus: status,
+      error: errorMeta,
+    });
+
+    return { status, data: null };
+  }
+}
+
 export async function serviceRequestOptional<TResponse, TBody = unknown>(
   input: ServiceRequest<TBody>
 ): Promise<TResponse | null> {

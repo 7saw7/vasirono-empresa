@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Building2, SlidersHorizontal } from "lucide-react";
 import { AdminCompanyHeader } from "@/components/layout/AdminCompanyHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { DashboardData } from "@/features/admin-company/dashboard/types";
@@ -7,6 +7,7 @@ import { BranchPerformanceTable } from "./BranchPerformanceTable";
 import { CompanyScoreCard } from "./CompanyScoreCard";
 import { KpiCard } from "./KpiCard";
 import { VerificationSummaryCard } from "./VerificationSummaryCard";
+import { DashboardSyncIndicator } from "./DashboardSyncIndicator";
 
 export function DashboardView({ data }: { data: DashboardData }) {
   return (
@@ -30,11 +31,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
-          <span>Datos sincronizados</span>
-          <RefreshCw className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
-        </div>
+        <DashboardSyncIndicator sync={data.sync} />
       </section>
 
       <section aria-label="Indicadores principales" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -45,7 +42,10 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(330px,0.75fr)]">
         <CompanyScoreCard score={data.companyScore} />
-        <VerificationSummaryCard summary={data.verificationSummary} />
+        <VerificationSummaryCard
+          summary={data.verificationSummary}
+          serviceStatus={data.sync.services.verifications}
+        />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">

@@ -1,13 +1,18 @@
 import { CheckCircle2, ClipboardCheck, ShieldCheck, TimerReset } from "lucide-react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import type { DashboardVerificationSummary } from "@/features/admin-company/dashboard/types";
+import type {
+  DashboardServiceStatus,
+  DashboardVerificationSummary,
+} from "@/features/admin-company/dashboard/types";
 import { formatDateTime } from "@/lib/utils/dates";
 
 export function VerificationSummaryCard({
   summary,
+  serviceStatus,
 }: {
   summary: DashboardVerificationSummary | null;
+  serviceStatus: DashboardServiceStatus;
 }) {
   if (!summary) {
     return (
@@ -16,10 +21,14 @@ export function VerificationSummaryCard({
           <div>
             <ShieldCheck className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
             <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Sin datos de verificación
+              {serviceStatus === "unavailable"
+                ? "Servicio de verificación no disponible"
+                : "Sin verificación iniciada"}
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              El estado aparecerá cuando se inicie una validación empresarial.
+              {serviceStatus === "unavailable"
+                ? "El resto del dashboard está disponible. Vuelve a actualizar en unos momentos."
+                : "El estado aparecerá cuando se inicie una validación empresarial."}
             </p>
           </div>
         </div>
