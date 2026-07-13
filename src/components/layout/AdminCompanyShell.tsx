@@ -21,7 +21,7 @@ export default function AdminCompanyShell({
         <AdminCompanySidebar session={session} />
 
         <div className="min-w-0 flex-1">
-          <AdminCompanyTopbar session={session} />
+          <AdminCompanyTopbar />
 
           <main className="min-w-0">
             <div className="mx-auto w-full max-w-[1680px] px-4 py-5 sm:px-6 sm:py-6 xl:px-7 xl:py-7">

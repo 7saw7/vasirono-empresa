@@ -1,24 +1,8 @@
 import Link from "next/link";
 import { Bell, Building2, PanelLeft, Plus } from "lucide-react";
-import type { SessionUser } from "@/lib/auth/session";
 import { ThemeToggle } from "./ThemeToggle";
 
-type AdminCompanyTopbarProps = {
-  session: SessionUser;
-};
-
-function getInitials(name: string): string {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-
-  return initials || "VA";
-}
-
-export function AdminCompanyTopbar({ session }: AdminCompanyTopbarProps) {
+export function AdminCompanyTopbar() {
   return (
     <header className="sticky top-0 z-30 hidden h-16 items-center justify-between border-b border-slate-200/90 bg-white/90 px-5 backdrop-blur-xl lg:flex dark:border-slate-800 dark:bg-[#0b1118]/90">
       <div className="flex min-w-0 items-center gap-3">
@@ -53,20 +37,6 @@ export function AdminCompanyTopbar({ session }: AdminCompanyTopbarProps) {
         </button>
 
         <ThemeToggle />
-
-        <div className="ml-1 flex items-center gap-2.5 border-l border-slate-200 pl-3 dark:border-slate-800">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-700 text-xs font-bold text-white shadow-sm">
-            {getInitials(session.name)}
-          </div>
-          <div className="hidden min-w-0 xl:block">
-            <p className="max-w-40 truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
-              {session.name}
-            </p>
-            <p className="max-w-40 truncate text-[11px] text-slate-500 dark:text-slate-400">
-              {session.email}
-            </p>
-          </div>
-        </div>
       </div>
     </header>
   );
