@@ -2,6 +2,7 @@ import {
   validateBranchDetail,
   validateBranchList,
   validateUpsertBranchInput,
+  validateDistrictOptions,
 } from "./schema";
 import type {
   BranchDetail,
@@ -80,7 +81,7 @@ export async function createBranch(
     throw new Error(payload?.error?.message || "No se pudo crear la sucursal.");
   }
 
-  return payload.data as BranchListItem;
+  return validateBranchDetail(payload.data);
 }
 
 export async function updateBranch(
@@ -103,7 +104,7 @@ export async function updateBranch(
     );
   }
 
-  return payload.data as BranchListItem;
+  return validateBranchDetail(payload.data);
 }
 
 export async function getBranchDistrictOptions(): Promise<
@@ -126,5 +127,5 @@ export async function getBranchDistrictOptions(): Promise<
     );
   }
 
-  return payload.data as BranchDistrictOption[];
+  return validateDistrictOptions(payload.data);
 }

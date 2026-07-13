@@ -31,8 +31,17 @@ export async function getReviewMetricsQuery(
   companyId: number,
   filters: ReviewFilters = {}
 ): Promise<ReviewMetrics | null> {
-  const payload = await fetchReviewsPayload(companyId, filters);
-  return payload.metrics;
+  const payload = await serviceRequest<unknown>({
+    service: "reviews",
+    companyId,
+    directPath: `/api/business/companies/${companyId}/reviews/metrics`,
+    gatewayPath: `/api/reviews/api/business/companies/${companyId}/reviews/metrics`,
+    query: { branchId: filters.branchId },
+    errorCode: "REVIEW_METRICS_SERVICE_ERROR",
+    errorMessage: "No se pudieron cargar las métricas de reseñas.",
+  });
+
+  return normalizeMetrics(asRecord(payload));
 }
 
 async function fetchReviewsPayload(
@@ -55,11 +64,9 @@ async function fetchReviewsPayload(
     errorMessage: "No se pudo cargar las reseñas.",
   });
 
-  const row = asRecord(payload);
-
   return {
     reviews: unwrapList(payload, "items", "reviews", "data").map(normalizeReview),
-    metrics: normalizeMetrics(asRecord(pick(row, "metrics", "summary"))),
+    metrics: null,
   };
 }
 

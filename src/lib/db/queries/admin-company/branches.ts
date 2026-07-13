@@ -15,6 +15,10 @@ import {
   validateBranchDetail,
   validateBranchList,
   validateUpsertBranchInput,
+  validateBranchContactInput,
+  validateBranchScheduleInput,
+  validateBranchHourExceptionInput,
+  validateBranchServiceAttachInput,
 } from "@/features/admin-company/branches/schema";
 import type {
   BranchDetail,
@@ -174,6 +178,7 @@ function normalizeBranchListItem(
   row: AnyRecord,
   fallbackCompanyId: number
 ): BranchListItem {
+  const analytics = asRecord(pick(row, "analytics"));
   return {
     branchId: toNumber(pick(row, "branchId", "branch_id", "id")),
     companyId: toNumber(
@@ -192,12 +197,18 @@ function normalizeBranchListItem(
     ),
     isMain: toBoolean(pick(row, "isMain", "is_main"), false),
     isActive: toBoolean(pick(row, "isActive", "is_active"), true),
-    finalScore: toNullableNumber(pick(row, "finalScore", "final_score")),
-    visits30d: toNullableNumber(pick(row, "visits30d", "visits_30d")),
-    avgRating90d: toNullableNumber(
-      pick(row, "avgRating90d", "avg_rating_90d")
+    finalScore: toNullableNumber(
+      pick(row, "finalScore", "final_score") ?? pick(analytics, "finalScore", "final_score")
     ),
-    reviews90d: toNullableNumber(pick(row, "reviews90d", "reviews_90d")),
+    visits30d: toNullableNumber(
+      pick(row, "visits30d", "visits_30d") ?? pick(analytics, "visits30d", "visits_30d", "visitsCount", "visits_count")
+    ),
+    avgRating90d: toNullableNumber(
+      pick(row, "avgRating90d", "avg_rating_90d") ?? pick(analytics, "averageRating90d", "avgRating90d", "avg_rating_90d", "averageRating", "average_rating")
+    ),
+    reviews90d: toNullableNumber(
+      pick(row, "reviews90d", "reviews_90d") ?? pick(analytics, "reviews90d", "reviews_90d", "reviewsCount", "reviews_count")
+    ),
   };
 }
 
@@ -217,6 +228,7 @@ function normalizeBranchDetail(
     lon: toNullableNumber(pick(row, "lon", "lng", "longitude")),
     schedules: asArray(pick(row, "schedules", "schedule")).map((item) => ({
       scheduleId: toNumber(pick(item, "scheduleId", "schedule_id", "id")),
+      dayId: toNumber(pick(item, "dayId", "day_id", "isoNumber", "iso_number")),
       dayName: toStringValue(pick(item, "dayName", "day_name", "day"), "Día"),
       opening:
         toStringValue(pick(item, "opening", "openTime", "opening_time"), "") ||
@@ -224,6 +236,7 @@ function normalizeBranchDetail(
       closing:
         toStringValue(pick(item, "closing", "closeTime", "closing_time"), "") ||
         null,
+      isoNumber: toNumber(pick(item, "isoNumber", "iso_number", "dayId", "day_id")),
       shiftNumber: toNumber(pick(item, "shiftNumber", "shift_number"), 1),
     })),
     services: asArray(pick(row, "services")).map((item) => ({
@@ -234,8 +247,9 @@ function normalizeBranchDetail(
     })),
     contacts: asArray(pick(row, "contacts")).map((item) => ({
       contactId: toNumber(pick(item, "contactId", "contact_id", "id")),
+      contactTypeId: toNumber(pick(item, "contactTypeId", "contact_type_id", "typeId", "type_id")),
       typeLabel: toStringValue(
-        pick(item, "typeLabel", "type_label", "type"),
+        pick(item, "typeLabel", "type_label", "contactTypeName", "contact_type_name", "type"),
         "Contacto"
       ),
       value: toStringValue(pick(item, "value"), ""),
@@ -246,7 +260,7 @@ function normalizeBranchDetail(
     media: asArray(pick(row, "media", "images")).map((item) => ({
       mediaId: toNumber(pick(item, "mediaId", "media_id", "id")),
       typeLabel: toStringValue(
-        pick(item, "typeLabel", "type_label", "type"),
+        pick(item, "typeLabel", "type_label", "mediaType", "media_type", "type"),
         "Imagen"
       ),
       url: toStringValue(pick(item, "url", "fileUrl", "file_url"), ""),
@@ -285,6 +299,7 @@ export async function listBranchContactsQuery(companyId: number, branchId: numbe
   });
   return unwrapList(payload, "items", "data", "contacts").map((item) => ({
     contactId: toNumber(pick(item, "contactId", "contact_id", "id")),
+    contactTypeId: toNumber(pick(item, "contactTypeId", "contact_type_id", "typeId", "type_id")),
     typeLabel: toStringValue(pick(item, "contactTypeName", "typeLabel", "type_label", "type"), "Contacto"),
     value: toStringValue(pick(item, "value"), ""),
     label: toStringValue(pick(item, "label"), "") || null,
@@ -294,20 +309,22 @@ export async function listBranchContactsQuery(companyId: number, branchId: numbe
 }
 
 export async function createBranchContactQuery(companyId: number, branchId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({
+  const input = validateBranchContactInput(body);
+  return serviceRequest<unknown, typeof input>({
     service: "branch",
     companyId,
     directPath: `/api/company/branches/${branchId}/contacts`,
     gatewayPath: `/api/branch/api/company/branches/${branchId}/contacts`,
     method: "POST",
-    body,
+    body: input,
     errorCode: "BRANCH_CONTACT_CREATE_ERROR",
     errorMessage: "No se pudo crear el contacto.",
   });
 }
 
 export async function updateBranchContactQuery(companyId: number, branchId: number, contactId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/contacts/${contactId}`, gatewayPath: `/api/branch/api/company/branches/${branchId}/contacts/${contactId}`, method: "PUT", body, errorCode: "BRANCH_CONTACT_UPDATE_ERROR", errorMessage: "No se pudo actualizar el contacto." });
+  const input = validateBranchContactInput(body);
+  return serviceRequest<unknown, typeof input>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/contacts/${contactId}`, gatewayPath: `/api/branch/api/company/branches/${branchId}/contacts/${contactId}`, method: "PUT", body: input, errorCode: "BRANCH_CONTACT_UPDATE_ERROR", errorMessage: "No se pudo actualizar el contacto." });
 }
 
 export async function deleteBranchContactQuery(companyId: number, branchId: number, contactId: number) {
@@ -322,6 +339,7 @@ export async function listBranchSchedulesQuery(companyId: number, branchId: numb
   const payload = await serviceRequest<unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/schedules`, gatewayPath: `/api/branch/api/company/branches/${branchId}/schedules`, errorCode: "BRANCH_SCHEDULES_ERROR", errorMessage: "No se pudo cargar horarios." });
   return unwrapList(payload, "items", "data", "schedules").map((item) => ({
     scheduleId: toNumber(pick(item, "scheduleId", "schedule_id", "id")),
+    dayId: toNumber(pick(item, "dayId", "day_id", "isoNumber", "iso_number")),
     dayName: toStringValue(pick(item, "dayName", "day_name", "day"), "Día"),
     isoNumber: toNumber(pick(item, "isoNumber", "iso_number")),
     opening: toStringValue(pick(item, "opening"), "") || null,
@@ -331,7 +349,8 @@ export async function listBranchSchedulesQuery(companyId: number, branchId: numb
 }
 
 export async function upsertBranchScheduleQuery(companyId: number, branchId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/schedules`, gatewayPath: `/api/branch/api/company/branches/${branchId}/schedules`, method: "POST", body, errorCode: "BRANCH_SCHEDULE_UPSERT_ERROR", errorMessage: "No se pudo guardar el horario." });
+  const input = validateBranchScheduleInput(body);
+  return serviceRequest<unknown, typeof input>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/schedules`, gatewayPath: `/api/branch/api/company/branches/${branchId}/schedules`, method: "POST", body: input, errorCode: "BRANCH_SCHEDULE_UPSERT_ERROR", errorMessage: "No se pudo guardar el horario." });
 }
 
 export async function deleteBranchScheduleQuery(companyId: number, branchId: number, scheduleId: number) {
@@ -352,11 +371,13 @@ export async function listBranchHourExceptionsQuery(companyId: number, branchId:
 }
 
 export async function createBranchHourExceptionQuery(companyId: number, branchId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/hour-exceptions`, gatewayPath: `/api/branch/api/company/branches/${branchId}/hour-exceptions`, method: "POST", body, errorCode: "BRANCH_EXCEPTION_CREATE_ERROR", errorMessage: "No se pudo crear la excepción." });
+  const input = validateBranchHourExceptionInput(body);
+  return serviceRequest<unknown, typeof input>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/hour-exceptions`, gatewayPath: `/api/branch/api/company/branches/${branchId}/hour-exceptions`, method: "POST", body: input, errorCode: "BRANCH_EXCEPTION_CREATE_ERROR", errorMessage: "No se pudo crear la excepción." });
 }
 
 export async function updateBranchHourExceptionQuery(companyId: number, branchId: number, exceptionId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/hour-exceptions/${exceptionId}`, gatewayPath: `/api/branch/api/company/branches/${branchId}/hour-exceptions/${exceptionId}`, method: "PUT", body, errorCode: "BRANCH_EXCEPTION_UPDATE_ERROR", errorMessage: "No se pudo actualizar la excepción." });
+  const input = validateBranchHourExceptionInput(body);
+  return serviceRequest<unknown, typeof input>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/hour-exceptions/${exceptionId}`, gatewayPath: `/api/branch/api/company/branches/${branchId}/hour-exceptions/${exceptionId}`, method: "PUT", body: input, errorCode: "BRANCH_EXCEPTION_UPDATE_ERROR", errorMessage: "No se pudo actualizar la excepción." });
 }
 
 export async function deleteBranchHourExceptionQuery(companyId: number, branchId: number, exceptionId: number) {
@@ -376,7 +397,8 @@ export async function listServiceCatalogQuery(companyId: number): Promise<Branch
 }
 
 export async function attachBranchServiceQuery(companyId: number, branchId: number, body: unknown) {
-  return serviceRequest<unknown, unknown>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/services`, gatewayPath: `/api/branch/api/company/branches/${branchId}/services`, method: "POST", body, errorCode: "BRANCH_SERVICE_ATTACH_ERROR", errorMessage: "No se pudo asociar el servicio." });
+  const input = validateBranchServiceAttachInput(body);
+  return serviceRequest<unknown, typeof input>({ service: "branch", companyId, directPath: `/api/company/branches/${branchId}/services`, gatewayPath: `/api/branch/api/company/branches/${branchId}/services`, method: "POST", body: input, errorCode: "BRANCH_SERVICE_ATTACH_ERROR", errorMessage: "No se pudo asociar el servicio." });
 }
 
 export async function updateBranchServiceAvailabilityQuery(companyId: number, branchId: number, serviceId: number, isAvailable: boolean) {

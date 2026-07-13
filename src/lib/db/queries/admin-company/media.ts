@@ -169,13 +169,17 @@ export async function updateGalleryMediaQuery(
     ? `/api/media/api/media/companies/${companyId}/${input.mediaId}`
     : `/api/media/api/media/branches/${input.ownerId}/${input.mediaId}`;
 
-  const payload = await serviceRequest<unknown, { altText?: string | null; isActive?: boolean }>({
+  const body: { altText?: string | null; isActive?: boolean } = {};
+  if (Object.prototype.hasOwnProperty.call(input, "altText")) body.altText = input.altText ?? null;
+  if (typeof input.isActive === "boolean") body.isActive = input.isActive;
+
+  const payload = await serviceRequest<unknown, typeof body>({
     service: "media",
     companyId,
     directPath,
     gatewayPath,
     method: "PATCH",
-    body: { altText: input.altText ?? null, isActive: input.isActive },
+    body,
     errorCode: "MEDIA_UPDATE_ERROR",
     errorMessage: "No se pudo actualizar la imagen.",
   });
@@ -202,6 +206,24 @@ export async function deleteGalleryMediaQuery(
     method: "DELETE",
     errorCode: "MEDIA_DELETE_ERROR",
     errorMessage: "No se pudo eliminar la imagen.",
+  });
+}
+
+
+export async function reorderBranchMediaQuery(
+  companyId: number,
+  branchId: number,
+  items: Array<{ mediaId: number; sortOrder: number }>,
+): Promise<unknown> {
+  return serviceRequest<unknown, { items: Array<{ mediaId: number; sortOrder: number }> }>({
+    service: "media",
+    companyId,
+    directPath: `/api/media/branches/${branchId}/reorder`,
+    gatewayPath: `/api/media/api/media/branches/${branchId}/reorder`,
+    method: "PATCH",
+    body: { items },
+    errorCode: "MEDIA_REORDER_ERROR",
+    errorMessage: "No se pudo ordenar las imágenes.",
   });
 }
 

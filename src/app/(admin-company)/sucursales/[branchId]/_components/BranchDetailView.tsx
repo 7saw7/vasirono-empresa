@@ -2,13 +2,10 @@ import { AdminCompanyHeader } from "@/components/layout/AdminCompanyHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { BranchDetail } from "@/features/admin-company/branches/types";
 import { BranchAnalyticsSummary } from "./BranchAnalyticsSummary";
-import { BranchContactsForm } from "./BranchContactsForm";
 import { BranchMediaManager } from "./BranchMediaManager";
+import { BranchOperationsPanel } from "./BranchOperationsPanel";
 import { BranchProfileForm } from "./BranchProfileForm";
 import { BranchReviewsPreview } from "./BranchReviewsPreview";
-import { BranchSchedulesForm } from "./BranchSchedulesForm";
-import { BranchServicesForm } from "./BranchServicesForm";
-import { BranchOperationsPanel } from "./BranchOperationsPanel";
 
 export function BranchDetailView({ branch }: { branch: BranchDetail }) {
   return (
@@ -21,18 +18,6 @@ export function BranchDetailView({ branch }: { branch: BranchDetail }) {
       <BranchAnalyticsSummary branch={branch} />
       <BranchProfileForm branch={branch} />
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <BranchContactsForm contacts={branch.contacts} />
-        <BranchSchedulesForm schedules={branch.schedules} />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <BranchServicesForm services={branch.services} />
-        <BranchReviewsPreview branch={branch} />
-      </div>
-
-      <BranchMediaManager media={branch.media} />
-
       <BranchOperationsPanel
         branchId={branch.branchId}
         contacts={branch.contacts}
@@ -40,27 +25,18 @@ export function BranchDetailView({ branch }: { branch: BranchDetail }) {
         services={branch.services}
       />
 
-      <SectionCard
-        title="Ubicación"
-        description="Referencia geográfica actual de la sucursal."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Latitud
-            </p>
-            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">
-              {branch.lat ?? "No disponible"}
-            </p>
-          </div>
+      <BranchReviewsPreview branch={branch} />
+      <BranchMediaManager branchId={branch.branchId} branchName={branch.name} />
 
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Longitud
-            </p>
-            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">
-              {branch.lon ?? "No disponible"}
-            </p>
+      <SectionCard title="Ubicación" description="Referencia geográfica actual de la sucursal.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Latitud</p>
+            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">{branch.lat ?? "No disponible"}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Longitud</p>
+            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">{branch.lon ?? "No disponible"}</p>
           </div>
         </div>
       </SectionCard>

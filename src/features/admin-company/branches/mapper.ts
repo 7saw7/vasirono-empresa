@@ -22,6 +22,7 @@ export function mapBranchListItem(raw: {
   final_score?: number | null;
   visits_30d?: number | null;
   avg_rating_90d?: number | null;
+  reviews_90d?: number | null;
 }): BranchListItem {
   return {
     branchId: raw.branch_id,
@@ -38,19 +39,24 @@ export function mapBranchListItem(raw: {
     finalScore: raw.final_score ?? null,
     visits30d: raw.visits_30d ?? null,
     avgRating90d: raw.avg_rating_90d ?? null,
+    reviews90d: raw.reviews_90d ?? null,
   };
 }
 
 export function mapBranchScheduleItem(raw: {
   schedule_id: number;
+  day_id: number;
   day_name: string;
+  iso_number: number;
   opening?: string | null;
   closing?: string | null;
   shift_number: number;
 }): BranchScheduleItem {
   return {
     scheduleId: raw.schedule_id,
+    dayId: raw.day_id,
     dayName: raw.day_name,
+    isoNumber: raw.iso_number,
     opening: raw.opening ?? null,
     closing: raw.closing ?? null,
     shiftNumber: raw.shift_number,
@@ -73,6 +79,7 @@ export function mapBranchServiceItem(raw: {
 
 export function mapBranchContactItem(raw: {
   contact_id: number;
+  contact_type_id: number;
   type_label: string;
   value: string;
   label?: string | null;
@@ -81,6 +88,7 @@ export function mapBranchContactItem(raw: {
 }): BranchContactItem {
   return {
     contactId: raw.contact_id,
+    contactTypeId: raw.contact_type_id,
     typeLabel: raw.type_label,
     value: raw.value,
     label: raw.label ?? null,
@@ -116,11 +124,14 @@ export function mapBranchDetail(raw: {
   final_score?: number | null;
   visits_30d?: number | null;
   avg_rating_90d?: number | null;
+  reviews_90d?: number | null;
   lat?: number | null;
   lon?: number | null;
   schedules: Array<{
     schedule_id: number;
+    day_id: number;
     day_name: string;
+    iso_number: number;
     opening?: string | null;
     closing?: string | null;
     shift_number: number;
@@ -133,6 +144,7 @@ export function mapBranchDetail(raw: {
   }>;
   contacts: Array<{
     contact_id: number;
+    contact_type_id: number;
     type_label: string;
     value: string;
     label?: string | null;

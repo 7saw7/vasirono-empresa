@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { getCompanyContext } from "@/lib/auth/company-context";
 import { handleRoute } from "@/lib/http/handle-route";
 import { AppError } from "@/lib/errors/app-error";
+import { parseWithSchema } from "@/lib/validation/parse";
+import { updateGalleryMediaSchema } from "@/features/admin-company/media/schema";
 import { deleteGalleryMediaQuery, updateGalleryMediaQuery } from "@/lib/db/queries/admin-company/media";
 import type { MediaOwnerType } from "@/features/admin-company/media/types";
 
@@ -24,11 +26,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
   return handleRoute(async () => {
     const { companyId } = await getCompanyContext("manageMedia");
     const parsed = parseParams(await params);
-    const body = await request.json();
+    const body = parseWithSchema(updateGalleryMediaSchema, await request.json());
     return updateGalleryMediaQuery(companyId, {
       ...parsed,
-      altText: typeof body.altText === "string" ? body.altText : null,
-      isActive: typeof body.isActive === "boolean" ? body.isActive : undefined,
+      ...(Object.prototype.hasOwnProperty.call(body, "altText") ? { altText: body.altText } : {}),
+      ...(typeof body.isActive === "boolean" ? { isActive: body.isActive } : {}),
     });
   });
 }

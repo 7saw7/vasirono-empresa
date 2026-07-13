@@ -27,7 +27,9 @@ export type BranchDetail = BranchListItem & {
 
 export type BranchScheduleItem = {
   scheduleId: number;
+  dayId: number;
   dayName: string;
+  isoNumber: number;
   opening?: string | null;
   closing?: string | null;
   shiftNumber: number;
@@ -42,6 +44,7 @@ export type BranchServiceItem = {
 
 export type BranchContactItem = {
   contactId: number;
+  contactTypeId: number;
   typeLabel: string;
   value: string;
   label?: string | null;
@@ -72,7 +75,34 @@ export type UpsertBranchInput = {
   isActive: boolean;
 };
 
-export type BranchDistrictOption = {
-  id: number;
-  name: string;
+export type BranchDistrictOption = { id: number; name: string };
+
+export type BranchContactInput = {
+  contactTypeId: number;
+  value: string;
+  label?: string;
+  isPrimary: boolean;
+  isPublic: boolean;
+};
+
+export type BranchScheduleInput = {
+  scheduleId?: number;
+  dayId: number;
+  opening?: string;
+  closing?: string;
+  shiftNumber: number;
+};
+
+export type BranchHourExceptionInput = {
+  exceptionDate: string;
+  isClosed: boolean;
+  opening?: string;
+  closing?: string;
+  reason?: string;
+  notes?: string;
+};
+
+export type BranchServiceAttachInput = {
+  serviceId: number;
+  isAvailable: boolean;
 };

@@ -16,15 +16,18 @@ import { ReviewList } from "./ReviewList";
 export function ReviewsView({
   reviews,
   metrics,
+  branchId,
 }: {
   reviews: ReviewItem[];
   metrics: ReviewMetrics | null;
+  branchId?: number;
 }) {
   const [filters, setFilters] = useState<ReviewFilters>({
     search: "",
     rating: undefined,
     responded: undefined,
     validated: undefined,
+    branchId,
   });
 
   const filtered = useMemo(() => {
@@ -61,7 +64,7 @@ export function ReviewsView({
     <div className="space-y-6">
       <AdminCompanyHeader
         title="Reseñas"
-        description="Monitorea comentarios, validación y respuestas de tu negocio."
+        description={branchId ? "Reseñas filtradas para la sucursal seleccionada." : "Monitorea comentarios, validación y respuestas de tu negocio."}
       />
 
       {metrics ? (
