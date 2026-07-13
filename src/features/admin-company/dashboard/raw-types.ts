@@ -57,6 +57,11 @@ export type RawDashboardSyncState = {
   status: "synced" | "partial";
   fetched_at: string;
   analytics_generated_at: string;
+  analytics_data_updated_at: string | null;
+  analytics_company_score_calculated_at: string | null;
+  analytics_funnel_calculated_at: string | null;
+  analytics_latest_event_at: string | null;
+  analytics_reviews_updated_at: string | null;
   services: {
     companies: "available";
     analytics: "available";

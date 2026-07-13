@@ -61,6 +61,11 @@ export type DashboardSyncState = {
   status: "synced" | "partial";
   fetchedAt: string;
   analyticsGeneratedAt: string;
+  analyticsDataUpdatedAt: string | null;
+  analyticsCompanyScoreCalculatedAt: string | null;
+  analyticsFunnelCalculatedAt: string | null;
+  analyticsLatestEventAt: string | null;
+  analyticsReviewsUpdatedAt: string | null;
   services: {
     companies: "available";
     analytics: "available";

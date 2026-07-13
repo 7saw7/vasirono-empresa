@@ -8,6 +8,7 @@ import {
   pick,
   toBoolean,
   toIsoString,
+  toNullableIsoString,
   toNumber,
   toStringValue,
   toTone,
@@ -77,6 +78,25 @@ export async function getCompanyDashboardQuery(companyId: number) {
       fetchedAt,
       analyticsGeneratedAt: toIsoString(
         pick(analyticsSync, "generatedAt", "generated_at") ?? fetchedAt
+      ),
+      analyticsDataUpdatedAt: toNullableIsoString(
+        pick(analyticsSync, "dataUpdatedAt", "data_updated_at")
+      ),
+      analyticsCompanyScoreCalculatedAt: toNullableIsoString(
+        pick(
+          analyticsSync,
+          "companyScoreCalculatedAt",
+          "company_score_calculated_at"
+        )
+      ),
+      analyticsFunnelCalculatedAt: toNullableIsoString(
+        pick(analyticsSync, "funnelCalculatedAt", "funnel_calculated_at")
+      ),
+      analyticsLatestEventAt: toNullableIsoString(
+        pick(analyticsSync, "latestEventAt", "latest_event_at")
+      ),
+      analyticsReviewsUpdatedAt: toNullableIsoString(
+        pick(analyticsSync, "reviewsUpdatedAt", "reviews_updated_at")
       ),
       services: {
         companies: "available",
@@ -225,9 +245,12 @@ function normalizeVerificationSummary(
     pick(summary, "checksCompleted", "checks_completed"),
     Math.max(completedChecks, completedFlags)
   );
-  const checksTotal = toNumber(
-    pick(summary, "checksTotal", "checks_total"),
-    Math.max(checks.length, 4)
+  const checksTotal = Math.max(
+    toNumber(
+      pick(summary, "checksTotal", "checks_total"),
+      Math.max(checks.length, 4)
+    ),
+    checksCompleted
   );
 
   return {
@@ -244,10 +267,17 @@ function normalizeVerificationSummary(
       pick(summary, "statusTone", "status_tone") ?? inferVerificationTone(statusCode)
     ),
     score: toNumber(pick(summary, "score", "verificationScore", "verification_score")),
-    lastReviewAt:
-      pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at") === undefined
-        ? null
-        : String(pick(summary, "lastReviewAt", "last_review_at", "reviewedAt", "reviewed_at", "verifiedAt", "verified_at")),
+    lastReviewAt: toNullableIsoString(
+      pick(
+        summary,
+        "lastReviewAt",
+        "last_review_at",
+        "reviewedAt",
+        "reviewed_at",
+        "verifiedAt",
+        "verified_at"
+      )
+    ),
     checksCompleted,
     checksTotal,
   };

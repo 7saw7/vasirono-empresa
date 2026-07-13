@@ -76,9 +76,13 @@ export function toTone(value: unknown) {
 }
 
 export function toIsoString(value: unknown): string {
-  if (value === undefined || value === null || value === "") {
-    return new Date().toISOString();
-  }
+  const normalized = toNullableIsoString(value);
+  return normalized ?? new Date().toISOString();
+}
 
-  return String(value);
+export function toNullableIsoString(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }

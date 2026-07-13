@@ -60,6 +60,12 @@ export function mapDashboardData(raw: RawDashboardPayload): DashboardData {
       status: raw.sync.status,
       fetchedAt: raw.sync.fetched_at,
       analyticsGeneratedAt: raw.sync.analytics_generated_at,
+      analyticsDataUpdatedAt: raw.sync.analytics_data_updated_at,
+      analyticsCompanyScoreCalculatedAt:
+        raw.sync.analytics_company_score_calculated_at,
+      analyticsFunnelCalculatedAt: raw.sync.analytics_funnel_calculated_at,
+      analyticsLatestEventAt: raw.sync.analytics_latest_event_at,
+      analyticsReviewsUpdatedAt: raw.sync.analytics_reviews_updated_at,
       services: raw.sync.services,
     },
   };

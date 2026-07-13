@@ -10,6 +10,25 @@ export function DashboardSyncIndicator({ sync }: { sync: DashboardSyncState }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isPartial = sync.status === "partial";
+  const sourceTimestamp = sync.analyticsDataUpdatedAt;
+  const label = sourceTimestamp
+    ? `Último dato ${formatDateTime(sourceTimestamp)}`
+    : `Consultado ${formatDateTime(sync.analyticsGeneratedAt)}`;
+  const freshnessDetails = [
+    { name: "Respuesta", timestamp: sync.analyticsGeneratedAt },
+    { name: "Score", timestamp: sync.analyticsCompanyScoreCalculatedAt },
+    { name: "Embudo", timestamp: sync.analyticsFunnelCalculatedAt },
+    { name: "Eventos", timestamp: sync.analyticsLatestEventAt },
+    { name: "Reseñas", timestamp: sync.analyticsReviewsUpdatedAt },
+  ]
+    .filter(
+      (entry): entry is { name: string; timestamp: string } =>
+        Boolean(entry.timestamp)
+    )
+    .map(
+      ({ name, timestamp }) => `${name}: ${formatDateTime(timestamp)}`
+    )
+    .join("\n");
 
   function refresh() {
     startTransition(() => {
@@ -25,10 +44,11 @@ export function DashboardSyncIndicator({ sync }: { sync: DashboardSyncState }) {
         <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
       )}
 
-      <span className={isPartial ? "text-amber-700 dark:text-amber-400" : undefined}>
-        {isPartial
-          ? "Actualización parcial"
-          : `Actualizado ${formatDateTime(sync.analyticsGeneratedAt)}`}
+      <span
+        className={isPartial ? "text-amber-700 dark:text-amber-400" : undefined}
+        title={freshnessDetails}
+      >
+        {isPartial ? `Actualización parcial · ${label}` : label}
       </span>
 
       <button
