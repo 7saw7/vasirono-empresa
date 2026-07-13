@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import type { ReviewItem } from "@/features/admin-company/reviews/types";
+import { useEffect, useState } from "react";
+import type {
+  ReviewItem,
+  ReviewResponse,
+} from "@/features/admin-company/reviews/types";
 import { upsertReviewResponse } from "@/features/admin-company/reviews/service";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 
-export function ReviewResponseForm({ review }: { review: ReviewItem }) {
+export function ReviewResponseForm({
+  review,
+  onSaved,
+}: {
+  review: ReviewItem;
+  onSaved: (response: ReviewResponse) => void;
+}) {
   const [responseText, setResponseText] = useState(
     review.response?.responseText ?? ""
   );
@@ -14,8 +23,12 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  useEffect(() => {
+    setResponseText(review.response?.responseText ?? "");
+  }, [review.response?.responseText]);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -34,16 +47,24 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
       return;
     }
 
+    const wasResponded = Boolean(review.response);
+
     try {
-      await upsertReviewResponse(review.id, { responseText: trimmedResponse });
+      const saved = await upsertReviewResponse(review.id, {
+        responseText: trimmedResponse,
+      });
+      setResponseText(saved.responseText);
+      onSaved(saved);
       setMessage(
-        review.response
+        wasResponded
           ? "Respuesta actualizada correctamente."
           : "Respuesta enviada correctamente."
       );
-    } catch (err) {
+    } catch (requestError) {
       setError(
-        err instanceof Error ? err.message : "No se pudo guardar la respuesta."
+        requestError instanceof Error
+          ? requestError.message
+          : "No se pudo guardar la respuesta."
       );
     } finally {
       setLoading(false);
@@ -55,30 +76,35 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
       <Textarea
         label={review.response ? "Editar respuesta" : "Responder reseña"}
         value={responseText}
-        onChange={(e) => setResponseText(e.target.value)}
+        onChange={(event) => setResponseText(event.target.value)}
         rows={4}
         placeholder="Escribe una respuesta profesional y clara para esta reseña."
       />
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {responseText.trim().length}/2000 caracteres
         </p>
 
-        <div>
+        <div className="min-h-5">
           {error ? (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           ) : message ? (
-            <p className="text-sm text-emerald-600">{message}</p>
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+              {message}
+            </p>
           ) : null}
         </div>
 
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={loading || responseText.trim().length < 3}
+        >
           {loading
             ? "Guardando..."
             : review.response
-            ? "Actualizar respuesta"
-            : "Responder"}
+              ? "Actualizar respuesta"
+              : "Responder"}
         </Button>
       </div>
     </form>

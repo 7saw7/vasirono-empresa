@@ -20,7 +20,7 @@ function toOptionalBoolean(value: unknown) {
 }
 
 export const reviewFiltersSchema = z.object({
-  search: z.preprocess(toOptionalTrimmedString, z.string().min(1).optional()),
+  search: z.preprocess(toOptionalTrimmedString, z.string().min(1).max(200).optional()),
   rating: z.preprocess(
     toOptionalInt,
     z.number().int().min(1).max(5).optional()
@@ -31,6 +31,11 @@ export const reviewFiltersSchema = z.object({
   ),
   responded: z.preprocess(toOptionalBoolean, z.boolean().optional()),
   validated: z.preprocess(toOptionalBoolean, z.boolean().optional()),
+  page: z.preprocess(toOptionalInt, z.number().int().positive().default(1)),
+  pageSize: z.preprocess(
+    toOptionalInt,
+    z.number().int().min(5).max(50).default(10)
+  ),
 });
 
 export const reviewResponseParamsSchema = z.object({

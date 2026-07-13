@@ -1,3 +1,12 @@
+export type ReviewMedia = {
+  id: number;
+  mediaType: string;
+  url: string;
+  altText: string | null;
+  isCover: boolean;
+  sortOrder: number;
+};
+
 export type ReviewItem = {
   id: number;
   branchId: number;
@@ -11,6 +20,7 @@ export type ReviewItem = {
   likesCount: number;
   dislikesCount: number;
   mediaCount: number;
+  media: ReviewMedia[];
   response: ReviewResponse | null;
 };
 
@@ -31,17 +41,29 @@ export type ReviewMetrics = {
   validatedRate: number;
 };
 
+export type ReviewPaginationMeta = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 export type ReviewFilters = {
   search?: string;
   rating?: number;
   branchId?: number;
   responded?: boolean;
   validated?: boolean;
+  page?: number;
+  pageSize?: number;
 };
 
 export type ReviewsPayload = {
   reviews: ReviewItem[];
   metrics: ReviewMetrics | null;
+  meta: ReviewPaginationMeta;
 };
 
 export type UpsertReviewResponseInput = {

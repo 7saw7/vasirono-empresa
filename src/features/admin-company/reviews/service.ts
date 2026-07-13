@@ -28,7 +28,7 @@ function getApiErrorMessage(payload: unknown, fallback: string) {
 function toQueryString(filters: ReviewFilters, includeMetrics = false) {
   const params = new URLSearchParams();
 
-  if (filters.search) params.set("search", filters.search);
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
   if (typeof filters.rating === "number") {
     params.set("rating", String(filters.rating));
   }
@@ -41,6 +41,12 @@ function toQueryString(filters: ReviewFilters, includeMetrics = false) {
   if (typeof filters.validated === "boolean") {
     params.set("validated", String(filters.validated));
   }
+  if (typeof filters.page === "number") {
+    params.set("page", String(filters.page));
+  }
+  if (typeof filters.pageSize === "number") {
+    params.set("pageSize", String(filters.pageSize));
+  }
   if (includeMetrics) {
     params.set("includeMetrics", "true");
   }
@@ -51,7 +57,8 @@ function toQueryString(filters: ReviewFilters, includeMetrics = false) {
 
 export async function getReviews(
   filters: ReviewFilters = {},
-  includeMetrics = true
+  includeMetrics = true,
+  signal?: AbortSignal
 ): Promise<ReviewsPayload> {
   const response = await fetch(
     `/api/admin-company/reviews${toQueryString(filters, includeMetrics)}`,
@@ -61,6 +68,7 @@ export async function getReviews(
         "Content-Type": "application/json",
       },
       cache: "no-store",
+      signal,
     }
   );
 
