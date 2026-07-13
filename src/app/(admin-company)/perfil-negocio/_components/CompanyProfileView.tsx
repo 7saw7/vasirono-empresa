@@ -15,9 +15,9 @@ export function CompanyProfileView({ data }: { data: CompanyProfile }) {
 
       <CompanyProfileForm data={data} />
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
         <CompanyContactsForm contacts={data.contacts} />
-        <CompanyCategoriesForm categories={data.categories} />
+        <CompanyCategoriesForm taxonomy={data.taxonomy} />
       </div>
 
       <CompanyMediaManager media={data.media} />
