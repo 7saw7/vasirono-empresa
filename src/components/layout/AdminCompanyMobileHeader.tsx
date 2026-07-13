@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-<<<<<<< HEAD
 import { Building2, Menu, X } from "lucide-react";
-import type { SessionUser } from "@/lib/auth/session";
-=======
-import { Menu, X } from "lucide-react";
->>>>>>> 4406bf1 (delete avatar en header)
 import { AdminCompanyNav } from "./AdminCompanyNav";
 import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -43,6 +38,7 @@ export function AdminCompanyMobileHeader() {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-sm">
               <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
             </span>
+
             <span className="min-w-0">
               <span className="block truncate text-base font-bold tracking-tight text-slate-950 dark:text-white">
                 Vasirono
@@ -55,6 +51,7 @@ export function AdminCompanyMobileHeader() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
+
             <button
               type="button"
               aria-label="Abrir menú del panel"
@@ -69,7 +66,12 @@ export function AdminCompanyMobileHeader() {
       </header>
 
       {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menú del panel empresa">
+        <div
+          className="fixed inset-0 z-50 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menú del panel empresa"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
@@ -79,13 +81,21 @@ export function AdminCompanyMobileHeader() {
 
           <aside className="relative flex h-full w-[min(88vw,340px)] flex-col border-r border-slate-200 bg-[#f8fafc] shadow-2xl dark:border-slate-800 dark:bg-[#080e14]">
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-              <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35">
+              <Link
+                href="/dashboard"
+                className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
+              >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white">
                   <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
                 </span>
+
                 <span className="min-w-0">
-                  <span className="block truncate text-base font-bold text-slate-950 dark:text-white">Vasirono</span>
-                  <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">Business panel</span>
+                  <span className="block truncate text-base font-bold text-slate-950 dark:text-white">
+                    Vasirono
+                  </span>
+                  <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Business panel
+                  </span>
                 </span>
               </Link>
 
@@ -103,21 +113,8 @@ export function AdminCompanyMobileHeader() {
               <AdminCompanyNav compact onNavigate={() => setOpen(false)} />
             </div>
 
-<<<<<<< HEAD
             <div className="border-t border-slate-200 p-3 dark:border-slate-800">
-              <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/70">
-                <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">
-                  {session.name}
-                </p>
-                <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-                  {session.email}
-                </p>
-                <AdminCompanyLogoutButton compact />
-              </div>
-=======
-            <div className="border-t border-neutral-200 p-4">
               <AdminCompanyLogoutButton compact />
->>>>>>> 4406bf1 (delete avatar en header)
             </div>
           </aside>
         </div>

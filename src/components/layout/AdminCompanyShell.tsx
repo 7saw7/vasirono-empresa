@@ -14,13 +14,8 @@ export default function AdminCompanyShell({
   session,
 }: AdminCompanyShellProps) {
   return (
-<<<<<<< HEAD
     <div className="min-h-screen bg-[#f4f7fa] text-slate-950 dark:bg-[#091017] dark:text-slate-100">
-      <AdminCompanyMobileHeader session={session} />
-=======
-    <div className="min-h-screen bg-neutral-50 text-neutral-950">
       <AdminCompanyMobileHeader />
->>>>>>> 4406bf1 (delete avatar en header)
 
       <div className="flex min-h-screen w-full">
         <AdminCompanySidebar session={session} />
