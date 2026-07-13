@@ -3,17 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+<<<<<<< HEAD
 import { Building2, Menu, X } from "lucide-react";
 import type { SessionUser } from "@/lib/auth/session";
+=======
+import { Menu, X } from "lucide-react";
+>>>>>>> 4406bf1 (delete avatar en header)
 import { AdminCompanyNav } from "./AdminCompanyNav";
 import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
 import { ThemeToggle } from "./ThemeToggle";
 
-type AdminCompanyMobileHeaderProps = {
-  session: SessionUser;
-};
-
-export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderProps) {
+export function AdminCompanyMobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -103,6 +103,7 @@ export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderPr
               <AdminCompanyNav compact onNavigate={() => setOpen(false)} />
             </div>
 
+<<<<<<< HEAD
             <div className="border-t border-slate-200 p-3 dark:border-slate-800">
               <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/70">
                 <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">
@@ -113,6 +114,10 @@ export function AdminCompanyMobileHeader({ session }: AdminCompanyMobileHeaderPr
                 </p>
                 <AdminCompanyLogoutButton compact />
               </div>
+=======
+            <div className="border-t border-neutral-200 p-4">
+              <AdminCompanyLogoutButton compact />
+>>>>>>> 4406bf1 (delete avatar en header)
             </div>
           </aside>
         </div>
