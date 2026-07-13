@@ -19,7 +19,7 @@ export function Tabs({ items, value, onChange, className }: TabsProps) {
   return (
     <div
       className={cn(
-        "inline-flex rounded-2xl border border-neutral-200 bg-white p-1",
+        "inline-flex rounded-2xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900/70",
         className
       )}
     >
@@ -34,8 +34,8 @@ export function Tabs({ items, value, onChange, className }: TabsProps) {
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-medium transition",
               active
-                ? "bg-neutral-950 text-white"
-                : "text-neutral-600 hover:text-neutral-950"
+                ? "bg-slate-950 text-white dark:bg-sky-500 dark:text-slate-950"
+                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
             )}
           >
             {item.label}

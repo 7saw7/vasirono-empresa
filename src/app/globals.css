@@ -151,3 +151,138 @@
     transition: none;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Panel empresarial: compatibilidad completa del tema oscuro
+   --------------------------------------------------------------------------
+   Varias vistas históricas todavía utilizan utilidades de superficie clara
+   (bg-white, neutral-50, text-neutral-950, etc.). Este bloque las normaliza
+   únicamente dentro del shell empresarial, sin afectar landing ni autenticación.
+*/
+@layer utilities {
+  .dark .admin-company-shell .bg-white {
+    background-color: #101821 !important;
+  }
+
+  .dark .admin-company-shell .bg-neutral-50,
+  .dark .admin-company-shell .bg-slate-50,
+  .dark .admin-company-shell .bg-slate-50\/60,
+  .dark .admin-company-shell .bg-slate-50\/70 {
+    background-color: rgba(15, 23, 42, 0.62) !important;
+  }
+
+  .dark .admin-company-shell .bg-neutral-100,
+  .dark .admin-company-shell .bg-slate-100 {
+    background-color: #172131 !important;
+  }
+
+  .dark .admin-company-shell .bg-neutral-200,
+  .dark .admin-company-shell .bg-slate-200 {
+    background-color: #243247 !important;
+  }
+
+  .dark .admin-company-shell .border-neutral-100,
+  .dark .admin-company-shell .border-neutral-200,
+  .dark .admin-company-shell .border-neutral-300,
+  .dark .admin-company-shell .border-slate-200,
+  .dark .admin-company-shell .border-slate-300 {
+    border-color: #2b3a4f !important;
+  }
+
+  .dark .admin-company-shell .text-neutral-950,
+  .dark .admin-company-shell .text-neutral-900,
+  .dark .admin-company-shell .text-neutral-800,
+  .dark .admin-company-shell .text-slate-950,
+  .dark .admin-company-shell .text-slate-900 {
+    color: #f8fafc !important;
+  }
+
+  .dark .admin-company-shell .text-neutral-700,
+  .dark .admin-company-shell .text-neutral-600,
+  .dark .admin-company-shell .text-slate-700,
+  .dark .admin-company-shell .text-slate-600 {
+    color: #cbd5e1 !important;
+  }
+
+  .dark .admin-company-shell .text-neutral-500,
+  .dark .admin-company-shell .text-neutral-400,
+  .dark .admin-company-shell .text-slate-500,
+  .dark .admin-company-shell .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+
+  .dark .admin-company-shell .bg-emerald-50 {
+    background-color: rgba(6, 78, 59, 0.34) !important;
+  }
+
+  .dark .admin-company-shell .bg-amber-50 {
+    background-color: rgba(120, 53, 15, 0.30) !important;
+  }
+
+  .dark .admin-company-shell .bg-red-50 {
+    background-color: rgba(127, 29, 29, 0.30) !important;
+  }
+
+  .dark .admin-company-shell .bg-sky-50,
+  .dark .admin-company-shell .bg-cyan-50 {
+    background-color: rgba(8, 47, 73, 0.42) !important;
+  }
+
+  .dark .admin-company-shell .text-emerald-700,
+  .dark .admin-company-shell .text-emerald-800 {
+    color: #34d399 !important;
+  }
+
+  .dark .admin-company-shell .text-amber-900 {
+    color: #fbbf24 !important;
+  }
+
+  .dark .admin-company-shell .text-red-700 {
+    color: #f87171 !important;
+  }
+
+  .dark .admin-company-shell .text-cyan-700 {
+    color: #22d3ee !important;
+  }
+
+  .dark .admin-company-shell input:not([type="checkbox"]):not([type="radio"]),
+  .dark .admin-company-shell textarea,
+  .dark .admin-company-shell select {
+    border-color: #334155;
+    background-color: #0d1620;
+    color: #f1f5f9;
+    color-scheme: dark;
+  }
+
+  .dark .admin-company-shell input::placeholder,
+  .dark .admin-company-shell textarea::placeholder {
+    color: #64748b;
+    opacity: 1;
+  }
+
+  .dark .admin-company-shell select option {
+    background-color: #0d1620;
+    color: #f1f5f9;
+  }
+
+  .dark .admin-company-shell input:focus,
+  .dark .admin-company-shell textarea:focus,
+  .dark .admin-company-shell select:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
+  }
+
+  .dark .admin-company-shell input:disabled,
+  .dark .admin-company-shell textarea:disabled,
+  .dark .admin-company-shell select:disabled {
+    background-color: #111c28;
+    color: #64748b;
+    opacity: 0.82;
+  }
+
+  .dark .admin-company-shell .hover\:bg-neutral-50:hover,
+  .dark .admin-company-shell .hover\:bg-slate-50:hover {
+    background-color: #172131 !important;
+  }
+}

@@ -61,7 +61,7 @@ export function ReviewResponseForm({ review }: { review: ReviewItem }) {
       />
 
       <div className="flex items-center justify-between gap-4">
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           {responseText.trim().length}/2000 caracteres
         </p>
 

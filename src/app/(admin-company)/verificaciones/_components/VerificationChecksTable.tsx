@@ -15,8 +15,8 @@ export function VerificationChecksTable({
       header: "Check",
       render: (row) => (
         <div>
-          <p className="font-medium text-neutral-950">{row.label}</p>
-          <p className="text-xs text-neutral-500">{row.code}</p>
+          <p className="font-medium text-slate-950 dark:text-slate-100">{row.label}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{row.code}</p>
         </div>
       ),
     },
@@ -45,7 +45,7 @@ export function VerificationChecksTable({
       description="Estado detallado de cada punto validado."
     >
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay checks registrados.
         </p>
       ) : (

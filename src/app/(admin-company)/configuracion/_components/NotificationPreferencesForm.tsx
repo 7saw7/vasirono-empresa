@@ -54,37 +54,37 @@ export function NotificationPreferencesForm({
       description="Define qué tipo de avisos quieres recibir desde el panel."
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 p-4">
-          <span className="text-sm text-neutral-800">Notificaciones por correo</span>
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <span className="text-sm text-slate-800 dark:text-slate-200">Notificaciones por correo</span>
           <input
-            type="checkbox"
+            type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900"
             checked={form.emailNotifications}
             onChange={(e) => setField("emailNotifications", e.target.checked)}
           />
         </label>
 
-        <label className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 p-4">
-          <span className="text-sm text-neutral-800">Alertas de reseñas</span>
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <span className="text-sm text-slate-800 dark:text-slate-200">Alertas de reseñas</span>
           <input
-            type="checkbox"
+            type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900"
             checked={form.reviewAlerts}
             onChange={(e) => setField("reviewAlerts", e.target.checked)}
           />
         </label>
 
-        <label className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 p-4">
-          <span className="text-sm text-neutral-800">Alertas de verificación</span>
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <span className="text-sm text-slate-800 dark:text-slate-200">Alertas de verificación</span>
           <input
-            type="checkbox"
+            type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900"
             checked={form.verificationAlerts}
             onChange={(e) => setField("verificationAlerts", e.target.checked)}
           />
         </label>
 
-        <label className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 p-4">
-          <span className="text-sm text-neutral-800">Resumen semanal</span>
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <span className="text-sm text-slate-800 dark:text-slate-200">Resumen semanal</span>
           <input
-            type="checkbox"
+            type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900"
             checked={form.weeklySummary}
             onChange={(e) => setField("weeklySummary", e.target.checked)}
           />

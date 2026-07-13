@@ -34,7 +34,7 @@ export function BranchFilters({ districts }: BranchFiltersProps) {
   }
 
   return (
-    <div className="grid gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm md:grid-cols-3">
+    <div className="grid gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] p-5 shadow-sm md:grid-cols-3">
       <Input
         label="Buscar"
         placeholder="Nombre, dirección o distrito"

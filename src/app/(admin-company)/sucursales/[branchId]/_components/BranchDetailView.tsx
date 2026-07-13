@@ -45,20 +45,20 @@ export function BranchDetailView({ branch }: { branch: BranchDetail }) {
         description="Referencia geográfica actual de la sucursal."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Latitud
             </p>
-            <p className="mt-2 text-sm font-medium text-neutral-950">
+            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">
               {branch.lat ?? "No disponible"}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Longitud
             </p>
-            <p className="mt-2 text-sm font-medium text-neutral-950">
+            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">
               {branch.lon ?? "No disponible"}
             </p>
           </div>

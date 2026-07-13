@@ -28,29 +28,29 @@ export function BranchAnalyticsSummary({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-neutral-200 p-4">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Score
           </p>
-          <p className="mt-2 text-2xl font-semibold text-neutral-950">
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
             {(branch.finalScore ?? 0).toFixed(1)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-4">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Visitas 30d
           </p>
-          <p className="mt-2 text-2xl font-semibold text-neutral-950">
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
             {formatNumber(branch.visits30d ?? 0)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-4">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Rating 90d
           </p>
-          <p className="mt-2 text-2xl font-semibold text-neutral-950">
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
             {(branch.avgRating90d ?? 0).toFixed(1)}
           </p>
         </div>

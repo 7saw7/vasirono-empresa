@@ -201,12 +201,12 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm">
+      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm dark:shadow-none">
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200">Promociones</p>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Ofertas visibles para clientes de Vasirono</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
               Crea, pausa y archiva promociones respetando el plan activo y el nivel de verificación del negocio.
             </p>
           </div>
@@ -235,8 +235,8 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
         </div>
       ) : null}
 
-      {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <SectionCard
@@ -258,13 +258,13 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
               <Input label="Fin" type="date" value={form.endDate} onChange={(event) => setForm({ ...form, endDate: event.target.value })} />
             </div>
             <Input label="URL de portada" value={form.coverUrl} onChange={(event) => setForm({ ...form, coverUrl: event.target.value })} placeholder="https://..." />
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-4 text-sm font-medium text-neutral-700 hover:bg-neutral-100">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-slate-50 dark:bg-slate-900/50 px-4 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/70">
               <ImagePlus className="h-4 w-4" /> Subir portada desde media-service
               <input type="file" accept="image/*" className="hidden" onChange={(event) => uploadCover(event.target.files?.[0] ?? null)} />
             </label>
-            <div className="grid gap-3 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-700 md:grid-cols-2">
-              <label className="flex items-center gap-2"><input type="checkbox" checked={form.requiresStaffValidation} onChange={(event) => setForm({ ...form, requiresStaffValidation: event.target.checked })} /> Requiere validación por staff</label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} disabled={!gate.canCreatePromotions} /> Publicar como activa</label>
+            <div className="grid gap-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-4 text-sm text-slate-700 dark:text-slate-300 md:grid-cols-2">
+              <label className="flex items-center gap-2"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={form.requiresStaffValidation} onChange={(event) => setForm({ ...form, requiresStaffValidation: event.target.checked })} /> Requiere validación por staff</label>
+              <label className="flex items-center gap-2"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} disabled={!gate.canCreatePromotions} /> Publicar como activa</label>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={isPending || (!gate.canCreatePromotions && !form.promotionId)}>
@@ -278,7 +278,7 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
         <SectionCard title="Promociones del negocio" description="Listado operativo con estado, redenciones y acciones rápidas.">
           <div className="space-y-4">
             {promotions.length ? promotions.map((promotion) => (
-              <article key={promotion.promotionId} className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
+              <article key={promotion.promotionId} className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] shadow-sm dark:shadow-none">
                 {promotion.coverUrl ? <img src={promotion.coverUrl} alt="" className="h-40 w-full object-cover" /> : null}
                 <div className="p-5">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -287,8 +287,8 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
                         <StatusBadge label={promotion.statusName ?? promotion.status} tone={statusTone(promotion.status, promotion.isPubliclyAvailable)} />
                         {promotion.isPubliclyAvailable ? <StatusBadge label="Visible en app" tone="success" /> : null}
                       </div>
-                      <h3 className="mt-3 text-xl font-semibold text-neutral-950">{promotion.title}</h3>
-                      <p className="mt-1 text-sm text-neutral-500">{promotion.branchName}</p>
+                      <h3 className="mt-3 text-xl font-semibold text-slate-950 dark:text-slate-100">{promotion.title}</h3>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{promotion.branchName}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" size="sm" variant="secondary" onClick={() => editPromotion(promotion)}>Editar</Button>
@@ -301,7 +301,7 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
                       <Button type="button" size="sm" variant="danger" onClick={() => mutateStatus(promotion.promotionId, "delete")}><Trash2 className="mr-1 h-4 w-4" /> Archivar</Button>
                     </div>
                   </div>
-                  {promotion.description ? <p className="mt-4 text-sm leading-6 text-neutral-600">{promotion.description}</p> : null}
+                  {promotion.description ? <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">{promotion.description}</p> : null}
                   <div className="mt-4 grid gap-3 text-sm md:grid-cols-4">
                     <Metric label="Descuento" value={promotion.discountPercent === null ? "—" : `${promotion.discountPercent}%`} />
                     <Metric label="Vigencia" value={`${formatDate(promotion.startDate)} - ${formatDate(promotion.endDate)}`} icon={<CalendarDays className="h-4 w-4" />} />
@@ -314,8 +314,8 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
                 </div>
               </article>
             )) : (
-              <div className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
-                <Megaphone className="mx-auto mb-3 h-8 w-8 text-neutral-400" />
+              <div className="rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                <Megaphone className="mx-auto mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" />
                 Aún no hay promociones registradas para esta empresa.
               </div>
             )}
@@ -328,9 +328,9 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
 
 function Metric({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
   return (
-    <div className="rounded-2xl bg-neutral-50 p-3">
-      <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-neutral-400">{icon}{label}</p>
-      <p className="mt-1 font-semibold text-neutral-950">{value}</p>
+    <div className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3">
+      <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">{icon}{label}</p>
+      <p className="mt-1 font-semibold text-slate-950 dark:text-slate-100">{value}</p>
     </div>
   );
 }
@@ -346,25 +346,25 @@ function statusTone(status: string, visible: boolean): "default" | "success" | "
 
 function RedemptionsList({ items }: { items: PromotionRedemptionItem[] }) {
   return (
-    <div className="mt-5 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-      <p className="text-sm font-semibold text-neutral-950">Usuarios interesados / redenciones</p>
+    <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
+      <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">Usuarios interesados / redenciones</p>
       {items.length ? (
         <div className="mt-3 space-y-2">
           {items.map((item) => (
-            <div key={item.redemptionId} className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2 text-sm md:flex-row md:items-center md:justify-between">
+            <div key={item.redemptionId} className="flex flex-col gap-1 rounded-xl bg-white dark:bg-[#101821] px-3 py-2 text-sm md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="font-medium text-neutral-950">{item.userName || item.userEmail || "Usuario"}</p>
-                <p className="text-xs text-neutral-500">Código {item.redemptionCode || "—"}</p>
+                <p className="font-medium text-slate-950 dark:text-slate-100">{item.userName || item.userEmail || "Usuario"}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Código {item.redemptionCode || "—"}</p>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge label={item.statusName ?? item.status} tone={item.status === "redeemed" ? "success" : item.status === "issued" ? "warning" : "default"} />
-                <span className="text-xs text-neutral-500">{formatDate(item.redeemedAt ?? item.issuedAt)}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(item.redeemedAt ?? item.issuedAt)}</span>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-neutral-500">Aún no hay usuarios interesados o redenciones registradas.</p>
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aún no hay usuarios interesados o redenciones registradas.</p>
       )}
     </div>
   );

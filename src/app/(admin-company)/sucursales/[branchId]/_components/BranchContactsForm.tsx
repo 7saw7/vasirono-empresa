@@ -13,7 +13,7 @@ export function BranchContactsForm({
       description="Canales de contacto asociados a esta sede."
     >
       {contacts.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Esta sucursal aún no tiene contactos registrados.
         </p>
       ) : (
@@ -21,10 +21,10 @@ export function BranchContactsForm({
           {contacts.map((contact) => (
             <div
               key={contact.contactId}
-              className="rounded-2xl border border-neutral-200 p-4"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold text-neutral-950">
+                <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                   {contact.typeLabel}
                 </h3>
 
@@ -40,12 +40,12 @@ export function BranchContactsForm({
               </div>
 
               {contact.label ? (
-                <p className="mt-2 text-xs uppercase tracking-wide text-neutral-500">
+                <p className="mt-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {contact.label}
                 </p>
               ) : null}
 
-              <p className="mt-1 text-sm text-neutral-600">{contact.value}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{contact.value}</p>
             </div>
           ))}
         </div>

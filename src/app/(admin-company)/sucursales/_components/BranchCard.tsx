@@ -15,11 +15,11 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-neutral-950">
+            <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-100">
               {branch.name}
             </h3>
-            <p className="mt-1 text-sm text-neutral-500">{branch.address}</p>
-            <p className="mt-1 text-sm text-neutral-500">{branch.districtName}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{branch.address}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{branch.districtName}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -38,33 +38,33 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
         </div>
 
         {branch.description ? (
-          <p className="text-sm text-neutral-600">{branch.description}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{branch.description}</p>
         ) : null}
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-neutral-200 p-3">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Score
             </p>
-            <p className="mt-1 text-lg font-semibold text-neutral-950">
+            <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-100">
               {metricText(branch.finalScore, 1)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 p-3">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Visitas 30d
             </p>
-            <p className="mt-1 text-lg font-semibold text-neutral-950">
+            <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-100">
               {metricText(branch.visits30d)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 p-3">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Rating 90d
             </p>
-            <p className="mt-1 text-lg font-semibold text-neutral-950">
+            <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-100">
               {metricText(branch.avgRating90d, 1)}
             </p>
           </div>
@@ -73,7 +73,7 @@ export function BranchCard({ branch }: { branch: BranchListItem }) {
         <div className="flex items-center justify-end">
           <Link
             href={`/sucursales/${branch.branchId}`}
-            className="text-sm font-medium text-neutral-950 hover:underline"
+            className="text-sm font-medium text-slate-950 dark:text-slate-100 hover:underline"
           >
             Ver detalle
           </Link>

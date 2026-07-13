@@ -14,7 +14,7 @@ export default function AdminCompanyShell({
   session,
 }: AdminCompanyShellProps) {
   return (
-    <div className="min-h-screen bg-[#f4f7fa] text-slate-950 dark:bg-[#091017] dark:text-slate-100">
+    <div className="admin-company-shell min-h-screen bg-[#f4f7fa] text-slate-950 dark:bg-[#091017] dark:text-slate-100">
       <AdminCompanyMobileHeader />
 
       <div className="flex min-h-screen w-full">

@@ -22,7 +22,7 @@ export function VerificationDocumentsTable({
         <Link
           href={row.fileUrl}
           target="_blank"
-          className="font-medium text-neutral-950 hover:underline"
+          className="font-medium text-slate-950 dark:text-slate-100 hover:underline"
         >
           {row.fileName}
         </Link>
@@ -46,7 +46,7 @@ export function VerificationDocumentsTable({
       description="Archivos de soporte cargados para la verificación."
     >
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay documentos registrados.
         </p>
       ) : (

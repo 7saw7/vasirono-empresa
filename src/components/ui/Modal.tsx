@@ -115,7 +115,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -130,18 +130,18 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="w-full max-w-2xl rounded-3xl border border-neutral-200 bg-white shadow-2xl outline-none"
+        className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white shadow-2xl outline-none dark:border-slate-700 dark:bg-[#101821]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-slate-700">
           <div className="space-y-1">
             <h2
               id={titleId}
-              className="text-lg font-semibold tracking-tight text-neutral-950"
+              className="text-lg font-semibold tracking-tight text-slate-950 dark:text-slate-100"
             >
               {title}
             </h2>
             {description ? (
-              <p id={descriptionId} className="text-sm text-neutral-600">
+              <p id={descriptionId} className="text-sm text-slate-600 dark:text-slate-400">
                 {description}
               </p>
             ) : null}
@@ -160,7 +160,7 @@ export function Modal({
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
 
         {footer ? (
-          <div className="border-t border-neutral-200 px-6 py-4">{footer}</div>
+          <div className="border-t border-slate-200 px-6 py-4 dark:border-slate-700">{footer}</div>
         ) : null}
       </div>
     </div>,

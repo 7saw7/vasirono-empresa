@@ -80,10 +80,10 @@ export function TeamView({ overview }: Props) {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm">
+      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm dark:shadow-none">
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200">Equipo</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">Usuarios, roles y permisos</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
           Administra quién puede operar el panel empresa. Los permisos salen del rol y del contexto de empresa activo.
         </p>
       </header>
@@ -94,8 +94,8 @@ export function TeamView({ overview }: Props) {
         <StatCard label="Gestión avanzada" value={overview.teamManagementEnabled ? "Activa" : "Bloqueada"} helper="Según entitlements" />
       </div>
 
-      {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <SectionCard title="Agregar integrante" description="El usuario debe existir previamente en Vasirono. Puedes buscarlo por correo.">
@@ -113,15 +113,15 @@ export function TeamView({ overview }: Props) {
         <SectionCard title="Integrantes" description="Activa, desactiva o cambia roles sin tocar directamente la base de datos.">
           <div className="space-y-3">
             {members.length ? members.map((member) => (
-              <article key={member.userId} className="rounded-3xl border border-neutral-200 bg-white p-4">
+              <article key={member.userId} className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] p-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-neutral-950">{member.userName}</h3>
+                      <h3 className="font-semibold text-slate-950 dark:text-slate-100">{member.userName}</h3>
                       <StatusBadge label={member.isActive ? "Activo" : "Inactivo"} tone={member.isActive ? "success" : "warning"} />
                     </div>
-                    <p className="mt-1 text-sm text-neutral-500">{member.userEmail}</p>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-neutral-400"><ShieldCheck className="h-3.5 w-3.5" /> {member.roleName}</p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{member.userEmail}</p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500"><ShieldCheck className="h-3.5 w-3.5" /> {member.roleName}</p>
                   </div>
                   <div className="flex flex-col gap-2 md:min-w-64">
                     <Select value={String(member.roleId)} onChange={(event) => updateRole(member, Number(event.target.value))}>
@@ -134,8 +134,8 @@ export function TeamView({ overview }: Props) {
                 </div>
               </article>
             )) : (
-              <div className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
-                <UsersRound className="mx-auto mb-3 h-8 w-8 text-neutral-400" />
+              <div className="rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                <UsersRound className="mx-auto mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" />
                 Aún no hay integrantes registrados.
               </div>
             )}

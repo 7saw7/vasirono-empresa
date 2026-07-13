@@ -29,7 +29,7 @@ type BillingViewProps = {
 export function BillingView({ data }: BillingViewProps) {
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm">
+      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm dark:shadow-none">
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200">
           Plan y facturación
         </p>
@@ -38,7 +38,7 @@ export function BillingView({ data }: BillingViewProps) {
             <h1 className="text-3xl font-semibold tracking-tight">
               Beneficios, límites y pagos del negocio
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
               El frontend consume los entitlements del billing-service. Así el
               panel no adivina permisos: solo renderiza lo que el plan y la
               verificación permiten.
@@ -112,10 +112,10 @@ function LimitsCard({ limits }: { limits: PlanLimits }) {
         {items.map(([label, value]) => (
           <div
             key={label}
-            className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+            className="flex items-center justify-between rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-4 py-3"
           >
-            <span className="text-sm font-medium text-neutral-700">{label}</span>
-            <span className="text-sm font-semibold text-neutral-950">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+            <span className="text-sm font-semibold text-slate-950 dark:text-slate-100">
               {formatLimit(value)}
             </span>
           </div>
@@ -138,19 +138,19 @@ function FeatureMatrix({ features }: { features: PlanFeatures }) {
           return (
             <div
               key={key}
-              className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
+              className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4"
             >
               <div className="flex items-center gap-2">
                 {enabled ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 ) : (
-                  <Lock className="h-4 w-4 text-neutral-400" />
+                  <Lock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                 )}
-                <p className="text-sm font-semibold text-neutral-950">
+                <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                   {label}
                 </p>
               </div>
-              <p className="mt-2 text-sm leading-5 text-neutral-500">
+              <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
                 {description}
               </p>
               <div className="mt-3">
@@ -174,7 +174,7 @@ function UpgradeSection({ targets }: { targets: UpgradeTarget[] }) {
         title="Upgrade"
         description="Tu negocio ya está en el plan más alto configurado."
       >
-        <div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
+        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4 text-sm text-emerald-800">
           Tienes todos los beneficios disponibles para este ciclo.
         </div>
       </SectionCard>
@@ -190,20 +190,20 @@ function UpgradeSection({ targets }: { targets: UpgradeTarget[] }) {
         {targets.map((target) => (
           <div
             key={target.plan}
-            className="relative rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm"
+            className="relative rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#121a23] p-5 shadow-sm dark:border-slate-700 dark:shadow-none"
           >
             {target.recommended ? (
-              <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+              <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-cyan-50 dark:bg-cyan-950/30 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
                 <Sparkles className="h-3.5 w-3.5" /> Recomendado
               </div>
             ) : null}
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
               Plan
             </p>
-            <h3 className="mt-2 text-2xl font-semibold text-neutral-950">
+            <h3 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
               {target.label}
             </h3>
-            <ul className="mt-4 space-y-2 text-sm text-neutral-600">
+            <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-400">
               {(target.benefits.length ? target.benefits : fallbackBenefits(target.plan)).slice(0, 5).map((benefit) => (
                 <li key={benefit} className="flex gap-2">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
@@ -211,8 +211,8 @@ function UpgradeSection({ targets }: { targets: UpgradeTarget[] }) {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 rounded-2xl bg-neutral-50 p-3 text-xs leading-5 text-neutral-500">
-              Checkout manual preparado vía <strong>/api/company/billing/checkout</strong>. Falta configurar precios/método de pago productivo para activar el botón final.
+            <div className="mt-5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Checkout manual preparado vía <strong>/api/company/billing/checkout</strong>. Falta configurar precios y método de pago productivo para activar el botón final.
             </div>
           </div>
         ))}
@@ -225,9 +225,9 @@ function PaymentsTable({ payments }: { payments: PaymentHistoryItem[] }) {
   return (
     <SectionCard title="Historial de pagos" description="Últimos movimientos de facturación.">
       {payments.length ? (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
           <table className="min-w-full divide-y divide-neutral-200 text-sm">
-            <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="bg-slate-50 dark:bg-slate-900/50 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3">Fecha</th>
                 <th className="px-4 py-3">Método</th>
@@ -235,12 +235,12 @@ function PaymentsTable({ payments }: { payments: PaymentHistoryItem[] }) {
                 <th className="px-4 py-3">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100 bg-white">
+            <tbody className="divide-y divide-neutral-100 bg-white dark:bg-[#101821]">
               {payments.map((payment) => (
                 <tr key={payment.id}>
-                  <td className="px-4 py-3 text-neutral-600">{formatDate(payment.createdAt)}</td>
-                  <td className="px-4 py-3 text-neutral-600">{payment.paymentMethodName}</td>
-                  <td className="px-4 py-3 font-semibold text-neutral-950">S/ {payment.amount.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{formatDate(payment.createdAt)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{payment.paymentMethodName}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-950 dark:text-slate-100">S/ {payment.amount.toFixed(2)}</td>
                   <td className="px-4 py-3"><StatusBadge label={payment.statusName ?? payment.statusKind} tone={statusTone(payment.statusKind)} /></td>
                 </tr>
               ))}
@@ -260,11 +260,11 @@ function SubscriptionsTable({ subscriptions }: { subscriptions: SubscriptionHist
       {subscriptions.length ? (
         <div className="space-y-3">
           {subscriptions.map((subscription) => (
-            <div key={subscription.id} className="rounded-2xl border border-neutral-200 p-4">
+            <div key={subscription.id} className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-neutral-950">{subscription.planName}</p>
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="font-semibold text-slate-950 dark:text-slate-100">{subscription.planName}</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {formatDate(subscription.startDate)} — {formatDate(subscription.endDate)}
                   </p>
                 </div>
@@ -282,7 +282,7 @@ function SubscriptionsTable({ subscriptions }: { subscriptions: SubscriptionHist
 
 function EmptyBillingState({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-500">
+    <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-6 text-sm text-slate-500 dark:text-slate-400">
       {text}
     </div>
   );

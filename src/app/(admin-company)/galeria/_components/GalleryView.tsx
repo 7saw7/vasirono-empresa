@@ -105,10 +105,10 @@ export function GalleryView({ overview }: Props) {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm">
+      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm dark:shadow-none">
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200">Galería</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">Media completa del negocio</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
           Administra logo, portada y fotos de las sucursales desde media-service, respetando el límite del plan activo.
         </p>
       </header>
@@ -120,8 +120,8 @@ export function GalleryView({ overview }: Props) {
         <StatCard label="Tipos" value={String(overview.mediaTypes.length)} helper="Catálogo media_types" />
       </div>
 
-      {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <SectionCard title="Subir recurso" description="Usa imágenes reales del negocio. Logo y portada pueden ser únicos según media_types.">
@@ -141,12 +141,12 @@ export function GalleryView({ overview }: Props) {
               {overview.mediaTypes.map((type) => <option key={type.id} value={type.id}>{type.name}{type.isUnique ? " · único" : ""}</option>)}
             </Select>
             <Input label="Texto alternativo" value={form.altText} onChange={(event) => setForm({ ...form, altText: event.target.value })} placeholder="Logo principal, fachada, salón principal..." />
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-sm font-medium text-neutral-700 hover:bg-neutral-100">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-slate-50 dark:bg-slate-900/50 px-4 py-6 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/70">
               <UploadCloud className="h-5 w-5" /> {form.file ? form.file.name : "Seleccionar imagen"}
               <input type="file" accept="image/*" className="hidden" onChange={(event) => setForm({ ...form, file: event.target.files?.[0] ?? null })} />
             </label>
-            <label className="flex items-center gap-2 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-700">
-              <input type="checkbox" checked={form.isCover} onChange={(event) => setForm({ ...form, isCover: event.target.checked })} /> Marcar como portada/cobertura
+            <label className="flex items-center gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-4 text-sm text-slate-700 dark:text-slate-300">
+              <input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={form.isCover} onChange={(event) => setForm({ ...form, isCover: event.target.checked })} /> Marcar como portada/cobertura
             </label>
             <Button type="submit" disabled={loading || (overview.planLimit !== null && used >= overview.planLimit)}>
               <ImageIcon className="mr-2 h-4 w-4" /> Subir a galería
@@ -160,8 +160,8 @@ export function GalleryView({ overview }: Props) {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {media.length ? media.map((item) => (
-              <article key={`${item.ownerType}-${item.mediaId}`} className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-                <div className="aspect-[4/3] bg-neutral-100">
+              <article key={`${item.ownerType}-${item.mediaId}`} className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] shadow-sm dark:shadow-none">
+                <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-800/70">
                   {item.url ? <img src={item.url} alt={item.altText ?? ""} className="h-full w-full object-cover" /> : null}
                 </div>
                 <div className="space-y-3 p-4">
@@ -170,7 +170,7 @@ export function GalleryView({ overview }: Props) {
                     {item.isCover ? <StatusBadge label="Portada" tone="success" /> : null}
                     {!item.isActive ? <StatusBadge label="Oculta" tone="warning" /> : null}
                   </div>
-                  <p className="truncate text-xs text-neutral-500">{item.mediaTypeName ?? "media"} · {item.mimeType ?? "archivo"}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.mediaTypeName ?? "media"} · {item.mimeType ?? "archivo"}</p>
                   <Input label="Texto alternativo" defaultValue={item.altText ?? ""} onBlur={(event) => updateMedia(item, { altText: event.target.value })} />
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" size="sm" variant="secondary" onClick={() => updateMedia(item, { isActive: !item.isActive })}>{item.isActive ? "Ocultar" : "Mostrar"}</Button>
@@ -179,7 +179,7 @@ export function GalleryView({ overview }: Props) {
                 </div>
               </article>
             )) : (
-              <div className="col-span-full rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">Aún no hay imágenes cargadas.</div>
+              <div className="col-span-full rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-8 text-center text-sm text-slate-500 dark:text-slate-400">Aún no hay imágenes cargadas.</div>
             )}
           </div>
         </SectionCard>

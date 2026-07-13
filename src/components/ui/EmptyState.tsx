@@ -15,10 +15,10 @@ export function EmptyState({
   return (
     <SectionCard className="text-center">
       <div className="mx-auto max-w-md space-y-3 py-6">
-        <h3 className="text-lg font-semibold text-neutral-950">{title}</h3>
+        <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-100">{title}</h3>
 
         {description ? (
-          <p className="text-sm leading-6 text-neutral-500">{description}</p>
+          <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</p>
         ) : null}
 
         {action ? <div className="pt-2">{action}</div> : null}

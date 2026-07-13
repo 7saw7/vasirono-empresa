@@ -11,7 +11,7 @@ export function VerificationStatusCard({
   if (!summary) {
     return (
       <SectionCard title="Estado de verificación">
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay datos de verificación disponibles.
         </p>
       </SectionCard>
@@ -31,35 +31,35 @@ export function VerificationStatusCard({
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge label={summary.statusLabel} tone={summary.statusTone} />
-          <span className="text-sm text-neutral-600">
-            Nivel: <strong className="text-neutral-900">{summary.level}</strong>
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            Nivel: <strong className="text-slate-900 dark:text-slate-100">{summary.level}</strong>
           </span>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Score
             </p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-950">
+            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
               {summary.score}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Checks
             </p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-950">
+            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
               {summary.checksCompleted}/{summary.checksTotal}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Última revisión
             </p>
-            <p className="mt-2 text-sm font-medium text-neutral-950">
+            <p className="mt-2 text-sm font-medium text-slate-950 dark:text-slate-100">
               {summary.lastReviewAt
                 ? formatDateTime(summary.lastReviewAt)
                 : "No registrada"}
@@ -68,11 +68,11 @@ export function VerificationStatusCard({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-neutral-500">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Progreso</span>
             <span>{progress}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800/70">
             <div
               className="h-full rounded-full bg-neutral-950"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}

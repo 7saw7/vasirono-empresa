@@ -139,8 +139,8 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
 
   return (
     <div className="space-y-6">
-      {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <SectionCard title="Contactos públicos" description="WhatsApp, teléfono, correo, web o redes visibles para usuarios.">
@@ -149,15 +149,15 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
               <Input label="Tipo ID" type="number" min="1" value={contactForm.contactTypeId} onChange={(event) => setContactForm({ ...contactForm, contactTypeId: event.target.value })} />
               <Input label="Valor" value={contactForm.value} onChange={(event) => setContactForm({ ...contactForm, value: event.target.value })} placeholder="+51999999999" required />
               <Input label="Etiqueta" value={contactForm.label} onChange={(event) => setContactForm({ ...contactForm, label: event.target.value })} placeholder="Reservas" />
-              <div className="flex items-end gap-4 rounded-2xl bg-neutral-50 p-3 text-sm text-neutral-700">
-                <label><input type="checkbox" checked={contactForm.isPrimary} onChange={(event) => setContactForm({ ...contactForm, isPrimary: event.target.checked })} /> Principal</label>
-                <label><input type="checkbox" checked={contactForm.isPublic} onChange={(event) => setContactForm({ ...contactForm, isPublic: event.target.checked })} /> Público</label>
+              <div className="flex items-end gap-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3 text-sm text-slate-700 dark:text-slate-300">
+                <label><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={contactForm.isPrimary} onChange={(event) => setContactForm({ ...contactForm, isPrimary: event.target.checked })} /> Principal</label>
+                <label><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={contactForm.isPublic} onChange={(event) => setContactForm({ ...contactForm, isPublic: event.target.checked })} /> Público</label>
               </div>
             </div>
             <Button type="submit" size="sm"><Phone className="mr-2 h-4 w-4" />Agregar contacto</Button>
           </form>
           <div className="mt-4 space-y-2">
-            {contacts.map((contact) => <div key={contact.contactId} className="flex items-center justify-between rounded-2xl border border-neutral-200 p-3 text-sm"><span>{contact.typeLabel}: {contact.value}</span>{contact.isPrimary ? <StatusBadge label="Principal" tone="info" /> : null}</div>)}
+            {contacts.map((contact) => <div key={contact.contactId} className="flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-sm"><span>{contact.typeLabel}: {contact.value}</span>{contact.isPrimary ? <StatusBadge label="Principal" tone="info" /> : null}</div>)}
           </div>
         </SectionCard>
 
@@ -171,7 +171,7 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
             </div>
             <Button type="submit" size="sm"><CalendarPlus className="mr-2 h-4 w-4" />Guardar horario</Button>
           </form>
-          <div className="mt-4 space-y-2">{schedules.map((item) => <div key={item.scheduleId} className="rounded-2xl border border-neutral-200 p-3 text-sm">{item.dayName} · {item.opening ?? "—"} - {item.closing ?? "—"}</div>)}</div>
+          <div className="mt-4 space-y-2">{schedules.map((item) => <div key={item.scheduleId} className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-sm">{item.dayName} · {item.opening ?? "—"} - {item.closing ?? "—"}</div>)}</div>
         </SectionCard>
       </div>
 
@@ -182,17 +182,17 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
               <option value="">Selecciona servicio</option>
               {availableCatalog.map((item) => <option key={item.serviceId} value={item.serviceId}>{item.name}</option>)}
             </Select>
-            <label className="flex items-center gap-2 rounded-2xl bg-neutral-50 p-3 text-sm text-neutral-700"><input type="checkbox" checked={serviceForm.isAvailable} onChange={(event) => setServiceForm({ ...serviceForm, isAvailable: event.target.checked })} />Disponible actualmente</label>
+            <label className="flex items-center gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={serviceForm.isAvailable} onChange={(event) => setServiceForm({ ...serviceForm, isAvailable: event.target.checked })} />Disponible actualmente</label>
             <Button type="submit" size="sm"><Settings2 className="mr-2 h-4 w-4" />Asociar servicio</Button>
           </form>
-          <div className="mt-4 space-y-2">{services.map((service) => <div key={service.serviceId} className="flex items-center justify-between rounded-2xl border border-neutral-200 p-3 text-sm"><span>{service.name}</span><StatusBadge label={service.isAvailable ? "Disponible" : "No disponible"} tone={service.isAvailable ? "success" : "warning"} /></div>)}</div>
+          <div className="mt-4 space-y-2">{services.map((service) => <div key={service.serviceId} className="flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-sm"><span>{service.name}</span><StatusBadge label={service.isAvailable ? "Disponible" : "No disponible"} tone={service.isAvailable ? "success" : "warning"} /></div>)}</div>
         </SectionCard>
 
         <SectionCard title="Excepciones de horario" description="Feriados, cierres o horarios especiales por fecha.">
           <form className="space-y-3" onSubmit={createException}>
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Fecha" type="date" value={exceptionForm.exceptionDate} onChange={(event) => setExceptionForm({ ...exceptionForm, exceptionDate: event.target.value })} required />
-              <label className="flex items-end gap-2 rounded-2xl bg-neutral-50 p-3 text-sm text-neutral-700"><input type="checkbox" checked={exceptionForm.isClosed} onChange={(event) => setExceptionForm({ ...exceptionForm, isClosed: event.target.checked })} />Cerrado todo el día</label>
+              <label className="flex items-end gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={exceptionForm.isClosed} onChange={(event) => setExceptionForm({ ...exceptionForm, isClosed: event.target.checked })} />Cerrado todo el día</label>
               <Input label="Apertura especial" type="time" value={exceptionForm.opening} onChange={(event) => setExceptionForm({ ...exceptionForm, opening: event.target.value })} disabled={exceptionForm.isClosed} />
               <Input label="Cierre especial" type="time" value={exceptionForm.closing} onChange={(event) => setExceptionForm({ ...exceptionForm, closing: event.target.value })} disabled={exceptionForm.isClosed} />
             </div>
@@ -200,7 +200,7 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
             <Textarea label="Notas" rows={2} value={exceptionForm.notes} onChange={(event) => setExceptionForm({ ...exceptionForm, notes: event.target.value })} />
             <Button type="submit" size="sm">Registrar excepción</Button>
           </form>
-          <div className="mt-4 space-y-2">{exceptions.map((item) => <div key={item.exceptionId} className="rounded-2xl border border-neutral-200 p-3 text-sm"><b>{item.exceptionDate}</b> · {item.isClosed ? "Cerrado" : `${item.opening ?? "—"} - ${item.closing ?? "—"}`}<p className="text-xs text-neutral-500">{item.reason ?? item.notes}</p></div>)}</div>
+          <div className="mt-4 space-y-2">{exceptions.map((item) => <div key={item.exceptionId} className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-sm"><b>{item.exceptionDate}</b> · {item.isClosed ? "Cerrado" : `${item.opening ?? "—"} - ${item.closing ?? "—"}`}<p className="text-xs text-slate-500 dark:text-slate-400">{item.reason ?? item.notes}</p></div>)}</div>
         </SectionCard>
       </div>
     </div>

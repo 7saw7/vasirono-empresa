@@ -13,7 +13,7 @@ export function VerificationAddressMatches({
       description="Comparación entre direcciones detectadas y la dirección del negocio."
     >
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay comparaciones de dirección registradas.
         </p>
       ) : (
@@ -21,14 +21,14 @@ export function VerificationAddressMatches({
           {items.map((item, index) => (
             <div
               key={`${item.sourceLabel}-${index}`}
-              className="rounded-2xl border border-neutral-200 p-4"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-neutral-950">
+                  <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                     {item.sourceLabel}
                   </p>
-                  <p className="mt-1 text-sm text-neutral-600">
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                     {item.addressValue}
                   </p>
                 </div>

@@ -37,11 +37,11 @@ export function BranchDetailView({ branch }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
                 {branch.name}
               </h1>
 
@@ -55,8 +55,8 @@ export function BranchDetailView({ branch }: Props) {
                 className={[
                   "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
                   branch.isActive
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-neutral-200 text-neutral-700",
+                    ? "bg-emerald-100 text-emerald-700 dark:text-emerald-300"
+                    : "bg-neutral-200 text-slate-700 dark:text-slate-300",
                 ].join(" ")}
               >
                 {branch.isActive ? "Activa" : "Inactiva"}
@@ -64,14 +64,14 @@ export function BranchDetailView({ branch }: Props) {
             </div>
 
             {branch.description ? (
-              <p className="max-w-3xl text-sm leading-6 text-neutral-600">
+              <p className="max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
                 {branch.description}
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-2 text-sm text-neutral-600">
+            <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-neutral-400" />
+                <MapPin className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                 <span>
                   {branch.address} · {branch.districtName}
                 </span>
@@ -79,14 +79,14 @@ export function BranchDetailView({ branch }: Props) {
 
               {branch.phone ? (
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-neutral-400" />
+                  <Phone className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{branch.phone}</span>
                 </div>
               ) : null}
 
               {branch.email ? (
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-neutral-400" />
+                  <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <span>{branch.email}</span>
                 </div>
               ) : null}
@@ -124,18 +124,18 @@ export function BranchDetailView({ branch }: Props) {
               {branch.schedules.map((item) => (
                 <div
                   key={item.scheduleId}
-                  className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm font-medium text-neutral-900">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {item.dayName}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Turno {item.shiftNumber}
                     </p>
                   </div>
 
-                  <p className="text-sm text-neutral-600">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     {item.opening && item.closing
                       ? `${item.opening} - ${item.closing}`
                       : "Horario no definido"}
@@ -156,7 +156,7 @@ export function BranchDetailView({ branch }: Props) {
               {availableServices.map((item) => (
                 <span
                   key={item.serviceId}
-                  className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-700"
+                  className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300"
                 >
                   {item.name}
                 </span>
@@ -175,14 +175,14 @@ export function BranchDetailView({ branch }: Props) {
               {publicContacts.map((item) => (
                 <div
                   key={item.contactId}
-                  className="rounded-xl border border-neutral-200 px-3 py-2"
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium text-neutral-900">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         {item.label?.trim() || item.typeLabel}
                       </p>
-                      <p className="text-sm text-neutral-600">{item.value}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{item.value}</p>
                     </div>
 
                     {item.isPrimary ? (
@@ -210,12 +210,12 @@ export function BranchDetailView({ branch }: Props) {
                   href={item.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-xl border border-neutral-200 px-3 py-3 transition hover:bg-neutral-50"
+                  className="block rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-3 transition hover:bg-slate-50 dark:bg-slate-900/50"
                 >
-                  <p className="text-sm font-medium text-neutral-900">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {item.typeLabel}
                   </p>
-                  <p className="truncate text-sm text-neutral-500">{item.url}</p>
+                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">{item.url}</p>
                 </a>
               ))}
             </div>
@@ -234,12 +234,12 @@ type MetricCardProps = {
 
 function MetricCard({ label, value, icon }: MetricCardProps) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-neutral-500">{label}</span>
-        <div className="text-neutral-400">{icon}</div>
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+        <div className="text-slate-400 dark:text-slate-500">{icon}</div>
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950">
+      <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
         {value}
       </div>
     </div>
@@ -255,13 +255,13 @@ type InfoCardProps = {
 
 function InfoCard({ title, icon, emptyMessage, children }: InfoCardProps) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] p-5">
       <div className="mb-4 flex items-center gap-2">
-        <div className="text-neutral-400">{icon}</div>
-        <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
+        <div className="text-slate-400 dark:text-slate-500">{icon}</div>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
       </div>
 
-      {children || <p className="text-sm text-neutral-500">{emptyMessage}</p>}
+      {children || <p className="text-sm text-slate-500 dark:text-slate-400">{emptyMessage}</p>}
     </div>
   );
 }

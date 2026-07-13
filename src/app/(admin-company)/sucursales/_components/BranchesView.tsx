@@ -16,11 +16,11 @@ export function BranchesView({ items, districts }: BranchesViewProps) {
       <BranchFilters districts={districts} />
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-          <h2 className="text-base font-semibold text-neutral-950">
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-white dark:bg-[#101821] p-8 text-center">
+          <h2 className="text-base font-semibold text-slate-950 dark:text-slate-100">
             No se encontraron sucursales
           </h2>
-          <p className="mt-2 text-sm text-neutral-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Ajusta los filtros o registra una nueva sucursal.
           </p>
         </div>

@@ -42,7 +42,7 @@ export function VerificationContactsTable({
       description="Comparación entre fuentes y datos del negocio."
     >
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay contactos contrastados.
         </p>
       ) : (

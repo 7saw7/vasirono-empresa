@@ -15,11 +15,11 @@ export function BranchRankingTable({
         <div className="space-y-1">
           <Link
             href={`/sucursales/${row.branchId}`}
-            className="font-medium text-neutral-950 hover:underline"
+            className="font-medium text-slate-950 dark:text-slate-100 hover:underline"
           >
             {row.branchName}
           </Link>
-          <p className="text-xs text-neutral-500">{row.districtName}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{row.districtName}</p>
         </div>
       ),
     },
@@ -47,7 +47,7 @@ export function BranchRankingTable({
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         No hay sucursales con métricas disponibles.
       </p>
     );

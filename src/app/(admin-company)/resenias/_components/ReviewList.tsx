@@ -15,7 +15,7 @@ export function ReviewList({ reviews }: { reviews: ReviewItem[] }) {
       description="Vista consolidada de comentarios y respuestas del negocio."
     >
       {reviews.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay reseñas para mostrar con los filtros actuales.
         </p>
       ) : (
@@ -23,12 +23,12 @@ export function ReviewList({ reviews }: { reviews: ReviewItem[] }) {
           {reviews.map((review) => (
             <article
               key={review.id}
-              className="rounded-2xl border border-neutral-200 p-5"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-neutral-950">
+                    <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                       {review.userName}
                     </h3>
 
@@ -55,16 +55,16 @@ export function ReviewList({ reviews }: { reviews: ReviewItem[] }) {
                   </p>
                 </div>
 
-                <span className="text-xs text-neutral-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   {formatDateTime(review.createdAt)}
                 </span>
               </div>
 
-              <p className="mt-4 text-sm leading-6 text-neutral-700">
+              <p className="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-300">
                 {review.comment || "Sin comentario."}
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-3 text-xs text-neutral-500">
+              <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
                 <span>Utilidad: {review.usefulnessScore ?? 0}</span>
                 <span>Likes: {review.likesCount}</span>
                 <span>Dislikes: {review.dislikesCount}</span>
@@ -72,13 +72,13 @@ export function ReviewList({ reviews }: { reviews: ReviewItem[] }) {
               </div>
 
               {review.response ? (
-                <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
+                <div className="mt-5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-neutral-950">
+                      <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                         Respuesta de empresa
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {review.response.responderName} ·{" "}
                         {formatDateTime(review.response.respondedAt)}
                       </p>
@@ -90,7 +90,7 @@ export function ReviewList({ reviews }: { reviews: ReviewItem[] }) {
                     />
                   </div>
 
-                  <p className="mt-3 text-sm leading-6 text-neutral-700">
+                  <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
                     {review.response.responseText}
                   </p>
                 </div>

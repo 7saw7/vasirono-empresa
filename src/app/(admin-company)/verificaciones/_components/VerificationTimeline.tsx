@@ -13,7 +13,7 @@ export function VerificationTimeline({
       description="Historial reciente del proceso de validación."
     >
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No hay eventos de timeline registrados.
         </p>
       ) : (
@@ -21,22 +21,22 @@ export function VerificationTimeline({
           {items.map((item) => (
             <div
               key={item.id}
-              className="rounded-2xl border border-neutral-200 p-4"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-neutral-950">
+                  <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-sm text-neutral-600">
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                     {item.description}
                   </p>
-                  <p className="mt-2 text-xs uppercase tracking-wide text-neutral-400">
+                  <p className="mt-2 text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     {item.type}
                   </p>
                 </div>
 
-                <span className="text-xs text-neutral-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   {formatDateTime(item.createdAt)}
                 </span>
               </div>

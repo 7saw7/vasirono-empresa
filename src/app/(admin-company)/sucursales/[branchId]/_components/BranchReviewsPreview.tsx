@@ -13,14 +13,14 @@ export function BranchReviewsPreview({
       description="Accede a las reseñas relacionadas con esta sucursal desde el módulo central."
     >
       <div className="space-y-3">
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           La gestión de reseñas se centraliza en el módulo de reseñas del panel
           empresarial.
         </p>
 
         <Link
           href={`/resenias?branchId=${branch.branchId}`}
-          className="inline-flex text-sm font-medium text-neutral-950 hover:underline"
+          className="inline-flex text-sm font-medium text-slate-950 dark:text-slate-100 hover:underline"
         >
           Ver reseñas de esta sucursal
         </Link>
