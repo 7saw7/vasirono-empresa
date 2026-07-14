@@ -53,7 +53,7 @@ export type PromotionListResult = {
   pagination: PromotionPagination;
 };
 
-export type PromotionFormInput = {
+export type PromotionCreateInput = {
   branchId: number;
   title: string;
   description?: string | null;
@@ -61,17 +61,19 @@ export type PromotionFormInput = {
   discountPercent?: number | null;
   startDate?: string | null;
   endDate?: string | null;
-  active?: boolean;
   coverUrl?: string | null;
   maxRedemptions?: number | null;
   maxRedemptionsPerUser?: number;
   requiresStaffValidation?: boolean;
 };
 
+export type PromotionUpdateInput = Omit<PromotionCreateInput, "branchId">;
+
 export type PromotionGate = {
   planAllowsPromotions: boolean;
   verifiedForPromotions: boolean;
   canCreatePromotions: boolean;
+  hasPromotionCapacity: boolean;
   reasons: string[];
   planLabel: string;
   promotionLimit: number | null;

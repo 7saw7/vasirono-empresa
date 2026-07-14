@@ -1,5 +1,5 @@
 import { AppError } from "@/lib/errors/app-error";
-import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import { serviceRequest } from "@/lib/http/service-client";
 import {
   asRecord,
   pick,
@@ -12,9 +12,13 @@ import {
 } from "@/lib/http/service-data";
 import { getCurrentPlanQuery } from "@/lib/db/queries/admin-company/billing";
 import { getCompanyVerificationsQuery } from "@/lib/db/queries/admin-company/verifications";
-import { validatePromotionFormInput } from "@/features/admin-company/promotions/schema";
+import {
+  validatePromotionCreateInput,
+  validatePromotionUpdateInput,
+} from "@/features/admin-company/promotions/schema";
 import type {
-  PromotionFormInput,
+  PromotionCreateInput,
+  PromotionUpdateInput,
   PromotionGate,
   PromotionListFilters,
   PromotionListItem,
@@ -82,9 +86,9 @@ export async function listPromotionsQuery(
 
 export async function createPromotionQuery(
   companyId: number,
-  input: PromotionFormInput
+  input: PromotionCreateInput
 ): Promise<unknown> {
-  const payload = validatePromotionFormInput(input);
+  const payload = validatePromotionCreateInput(input);
 
   return serviceRequest<unknown, typeof payload>({
     service: "promotions",
@@ -101,9 +105,9 @@ export async function createPromotionQuery(
 export async function updatePromotionQuery(
   companyId: number,
   promotionId: number,
-  input: PromotionFormInput
+  input: PromotionUpdateInput
 ): Promise<unknown> {
-  const payload = validatePromotionFormInput(input);
+  const payload = validatePromotionUpdateInput(input);
 
   return serviceRequest<unknown, Partial<typeof payload>>({
     service: "promotions",
@@ -157,25 +161,9 @@ export async function uploadPromotionCoverQuery(
   companyId: number,
   file: File,
   altText = "Portada de promoción"
-): Promise<{ url: string }> {
-  const mediaTypes = await serviceRequestOptional<unknown[]>({
-    service: "media",
-    companyId,
-    directPath: "/api/media/types",
-    gatewayPath: "/api/media/api/media/types",
-  });
-
-  const coverType = unwrapList(mediaTypes, "items", "data").find((item) => {
-    const row = asRecord(item);
-    const name = toStringValue(pick(row, "name", "code"), "").toLowerCase();
-    return name.includes("cover") || name.includes("portada");
-  });
-
-  const mediaTypeId = toNumber(pick(asRecord(coverType), "id", "mediaTypeId", "media_type_id"), 2);
+): Promise<{ url: string; path?: string }> {
   const formData = new FormData();
   formData.set("file", file);
-  formData.set("mediaTypeId", String(mediaTypeId));
-  formData.set("isCover", "true");
   formData.set("altText", altText);
 
   const sessionMod = await import("@/lib/auth/session");
@@ -184,8 +172,8 @@ export async function uploadPromotionCoverQuery(
   const { buildServiceUrl } = await import("@/lib/http/service-client");
   const url = buildServiceUrl({
     service: "media",
-    directPath: `/api/media/companies/${companyId}`,
-    gatewayPath: `/api/media/api/media/companies/${companyId}`,
+    directPath: "/api/media/promotions/assets",
+    gatewayPath: "/api/media/api/media/promotions/assets",
   });
 
   const response = await fetch(url, {
@@ -193,19 +181,17 @@ export async function uploadPromotionCoverQuery(
     cache: "no-store",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(session ? {
-        "x-user-id": session.userId,
-        "x-user-email": session.email,
-        "x-user-role": session.role,
-        "x-role-name": session.role,
-        "x-user-permissions": [
-          "media:types:read",
-          "media:company:read",
-          "media:company:write",
-          "media:branch:read",
-          "media:branch:write",
-        ].join(","),
-      } : {}),
+      ...(session
+        ? {
+            "x-user-id": session.userId,
+            "x-user-email": session.email,
+            "x-user-role": session.role,
+            "x-role-name": session.role,
+            "x-user-permissions": [
+              "media:company:write",
+            ].join(","),
+          }
+        : {}),
       "x-company-id": String(companyId),
       "x-company-ids": String(companyId),
       "x-portal": "company",
@@ -226,7 +212,19 @@ export async function uploadPromotionCoverQuery(
   }
 
   const data = asRecord(pick(asRecord(payload), "data") ?? payload);
-  return { url: toStringValue(pick(data, "url"), "") };
+  const uploadedUrl = toStringValue(pick(data, "url"), "");
+  if (!uploadedUrl) {
+    throw new AppError(
+      "MEDIA_UPLOAD_INVALID_RESPONSE",
+      "Media Service no devolvió la URL de la portada.",
+      502,
+    );
+  }
+
+  return {
+    url: uploadedUrl,
+    path: toStringValue(pick(data, "path"), "") || undefined,
+  };
 }
 
 
@@ -258,6 +256,40 @@ export async function listPromotionRedemptionsQuery(
   }));
 }
 
+export async function validatePromotionRedemptionQuery(
+  companyId: number,
+  code: string,
+  branchId?: number,
+): Promise<unknown> {
+  return serviceRequest<unknown, { branchId?: number }>({
+    service: "promotions",
+    companyId,
+    directPath: `/api/business/promotions/redemptions/${encodeURIComponent(code)}/validate`,
+    gatewayPath: `/api/promotions/api/business/promotions/redemptions/${encodeURIComponent(code)}/validate`,
+    method: "POST",
+    body: branchId ? { branchId } : {},
+    errorCode: "PROMOTION_REDEMPTION_VALIDATE_ERROR",
+    errorMessage: "No se pudo validar la redención.",
+  });
+}
+
+export async function cancelPromotionRedemptionQuery(
+  companyId: number,
+  code: string,
+  reason?: string,
+): Promise<unknown> {
+  return serviceRequest<unknown, { reason?: string }>({
+    service: "promotions",
+    companyId,
+    directPath: `/api/business/promotions/redemptions/${encodeURIComponent(code)}/cancel`,
+    gatewayPath: `/api/promotions/api/business/promotions/redemptions/${encodeURIComponent(code)}/cancel`,
+    method: "POST",
+    body: reason?.trim() ? { reason: reason.trim() } : {},
+    errorCode: "PROMOTION_REDEMPTION_CANCEL_ERROR",
+    errorMessage: "No se pudo cancelar la redención.",
+  });
+}
+
 export async function getPromotionGateQuery(companyId: number): Promise<PromotionGate> {
   const [currentPlan, verification, promotions] = await Promise.all([
     getCurrentPlanQuery(companyId),
@@ -285,18 +317,30 @@ export async function getPromotionGateQuery(companyId: number): Promise<Promotio
         verificationText.includes("aprob")),
   );
 
+  const currentActivePromotions = promotions.pagination?.total ?? promotions.items.length;
+  const hasPromotionCapacity =
+    currentPlan.promotionLimit === null ||
+    currentActivePromotions < currentPlan.promotionLimit;
+
   const reasons: string[] = [];
   if (!planAllowsPromotions) reasons.push("Disponible desde el plan Pro.");
   if (!verifiedForPromotions) reasons.push("Requiere verificación de negocio o canal oficial.");
+  if (planAllowsPromotions && !hasPromotionCapacity) {
+    reasons.push(
+      `Alcanzaste el límite de ${currentPlan.promotionLimit} promociones activas de tu plan.`,
+    );
+  }
 
   return {
     planAllowsPromotions,
     verifiedForPromotions,
-    canCreatePromotions: planAllowsPromotions && verifiedForPromotions,
+    hasPromotionCapacity,
+    canCreatePromotions:
+      planAllowsPromotions && verifiedForPromotions && hasPromotionCapacity,
     reasons,
     planLabel: currentPlan.planName ?? currentPlan.plan.toUpperCase(),
     promotionLimit: currentPlan.promotionLimit,
-    currentActivePromotions: promotions.pagination?.total ?? promotions.items.length,
+    currentActivePromotions,
     verificationLabel: summary?.statusLabel ?? "Sin verificación aprobada",
   };
 }

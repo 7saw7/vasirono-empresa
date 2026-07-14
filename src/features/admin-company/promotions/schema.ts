@@ -25,32 +25,59 @@ const nullableDate = z.preprocess((value) => {
   return value.trim() || null;
 }, z.string().date().nullable());
 
-export const promotionFormSchema = z
+const contentFields = {
+  title: z.string("El título es obligatorio.").trim().min(3, "El título debe tener al menos 3 caracteres.").max(120),
+  description: nullableText.optional(),
+  terms: nullableText.optional(),
+  discountPercent: nullablePercent.optional(),
+  startDate: nullableDate.optional(),
+  endDate: nullableDate.optional(),
+  coverUrl: nullableText.optional(),
+  maxRedemptions: nullablePositiveInt.optional(),
+  maxRedemptionsPerUser: z.coerce.number().int().positive().optional().default(1),
+  requiresStaffValidation: z.coerce.boolean().optional().default(true),
+};
+
+function dateRangeIsValid(value: { startDate?: string | null; endDate?: string | null }) {
+  if (!value.startDate || !value.endDate) return true;
+  return new Date(value.endDate) >= new Date(value.startDate);
+}
+
+export const promotionCreateSchema = z
   .object({
     branchId: z.coerce.number().int().positive("Selecciona una sucursal."),
-    title: z.string("El título es obligatorio.").trim().min(3, "El título debe tener al menos 3 caracteres.").max(120),
-    description: nullableText.optional(),
-    terms: nullableText.optional(),
-    discountPercent: nullablePercent.optional(),
-    startDate: nullableDate.optional(),
-    endDate: nullableDate.optional(),
-    active: z.coerce.boolean().optional().default(false),
-    coverUrl: nullableText.optional(),
-    maxRedemptions: nullablePositiveInt.optional(),
-    maxRedemptionsPerUser: z.coerce.number().int().positive().optional().default(1),
-    requiresStaffValidation: z.coerce.boolean().optional().default(true),
+    ...contentFields,
   })
-  .refine((value) => {
-    if (!value.startDate || !value.endDate) return true;
-    return new Date(value.endDate) >= new Date(value.startDate);
-  }, {
+  .refine(dateRangeIsValid, {
     path: ["endDate"],
     message: "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
   });
 
-export type PromotionFormSchemaInput = z.input<typeof promotionFormSchema>;
-export type PromotionFormSchemaOutput = z.output<typeof promotionFormSchema>;
+export const promotionUpdateSchema = z
+  .object({
+    title: contentFields.title.optional(),
+    description: contentFields.description,
+    terms: contentFields.terms,
+    discountPercent: contentFields.discountPercent,
+    startDate: contentFields.startDate,
+    endDate: contentFields.endDate,
+    coverUrl: contentFields.coverUrl,
+    maxRedemptions: contentFields.maxRedemptions,
+    maxRedemptionsPerUser: z.coerce.number().int().positive().optional(),
+    requiresStaffValidation: z.coerce.boolean().optional(),
+  })
+  .refine(dateRangeIsValid, {
+    path: ["endDate"],
+    message: "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
+  });
 
-export function validatePromotionFormInput(input: unknown): PromotionFormSchemaOutput {
-  return promotionFormSchema.parse(input);
+export type PromotionCreateSchemaOutput = z.output<typeof promotionCreateSchema>;
+export type PromotionUpdateSchemaOutput = z.output<typeof promotionUpdateSchema>;
+
+export function validatePromotionCreateInput(input: unknown): PromotionCreateSchemaOutput {
+  return promotionCreateSchema.parse(input);
+}
+
+export function validatePromotionUpdateInput(input: unknown): PromotionUpdateSchemaOutput {
+  return promotionUpdateSchema.parse(input);
 }
