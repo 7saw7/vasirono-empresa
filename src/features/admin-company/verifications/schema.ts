@@ -13,11 +13,21 @@ export const companyVerificationDataSchema = z.object({
     .object({
       level: z.string(),
       statusLabel: z.string(),
+      statusCode: z.string(),
       statusTone: verificationStatusToneSchema,
       score: z.number(),
       lastReviewAt: z.string().nullable(),
       checksCompleted: z.number().int(),
       checksTotal: z.number().int(),
+    })
+    .nullable(),
+  request: z
+    .object({
+      verificationRequestId: z.number().int(),
+      statusName: z.string(),
+      statusCode: z.string(),
+      submittedAt: z.string().nullable(),
+      reviewedAt: z.string().nullable(),
     })
     .nullable(),
   checks: z.array(
@@ -29,7 +39,7 @@ export const companyVerificationDataSchema = z.object({
       statusTone: verificationStatusToneSchema,
       notes: z.string().nullable(),
       reviewedAt: z.string().nullable(),
-    })
+    }),
   ),
   documents: z.array(
     z.object({
@@ -38,8 +48,10 @@ export const companyVerificationDataSchema = z.object({
       fileName: z.string(),
       fileUrl: z.string(),
       statusLabel: z.string(),
+      statusCode: z.string(),
+      reviewNotes: z.string().nullable(),
       uploadedAt: z.string().nullable(),
-    })
+    }),
   ),
   contacts: z.array(
     z.object({
@@ -48,14 +60,17 @@ export const companyVerificationDataSchema = z.object({
       value: z.string(),
       sourceLabel: z.string(),
       matchesCompany: z.boolean(),
-    })
+    }),
   ),
   addressMatches: z.array(
     z.object({
+      id: z.number().int(),
       sourceLabel: z.string(),
       addressValue: z.string(),
       matchesCompany: z.boolean(),
-    })
+      confidenceScore: z.number(),
+      notes: z.string().nullable(),
+    }),
   ),
   timeline: z.array(
     z.object({
@@ -64,8 +79,17 @@ export const companyVerificationDataSchema = z.object({
       description: z.string(),
       createdAt: z.string(),
       type: z.enum(["document", "review", "contact", "address", "system"]),
-    })
+    }),
   ),
+});
+
+export const requestVerificationSchema = z.object({
+  levelCode: z.string().trim().min(1).max(50).optional(),
+  publicSummary: z.string().trim().max(2000).optional(),
+});
+
+export const submitVerificationSchema = z.object({
+  publicSummary: z.string().trim().max(2000).optional(),
 });
 
 export type CompanyVerificationDataSchema = z.infer<

@@ -1,5 +1,6 @@
 import { AdminCompanyHeader } from "@/components/layout/AdminCompanyHeader";
 import type { CompanyVerificationData } from "@/features/admin-company/verifications/types";
+import { VerificationActionsCard } from "./VerificationActionsCard";
 import { VerificationAddressMatches } from "./VerificationAddressMatches";
 import { VerificationChecksTable } from "./VerificationChecksTable";
 import { VerificationContactsTable } from "./VerificationContactsTable";
@@ -20,6 +21,7 @@ export function VerificationsView({
       />
 
       <VerificationStatusCard summary={data.summary} />
+      <VerificationActionsCard request={data.request} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <VerificationChecksTable items={data.checks} />

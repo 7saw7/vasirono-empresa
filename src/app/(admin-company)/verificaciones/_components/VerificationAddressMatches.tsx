@@ -18,26 +18,35 @@ export function VerificationAddressMatches({
         </p>
       ) : (
         <div className="space-y-3">
-          {items.map((item, index) => (
+          {items.map((item) => (
             <div
-              key={`${item.sourceLabel}-${index}`}
-              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4"
+              key={item.id}
+              className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                     {item.sourceLabel}
                   </p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    {item.addressValue}
+                    {item.addressValue || "Dirección no disponible"}
                   </p>
+                  {item.notes ? (
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                      {item.notes}
+                    </p>
+                  ) : null}
                 </div>
 
-                {item.matchesCompany ? (
-                  <StatusBadge label="Coincide" tone="success" />
-                ) : (
-                  <StatusBadge label="No coincide" tone="warning" />
-                )}
+                <div className="flex flex-col items-end gap-2">
+                  <StatusBadge
+                    label={item.matchesCompany ? "Coincide" : "No coincide"}
+                    tone={item.matchesCompany ? "success" : "warning"}
+                  />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Confianza: {Math.max(0, Math.min(100, item.confidenceScore))}%
+                  </span>
+                </div>
               </div>
             </div>
           ))}
