@@ -25,6 +25,19 @@ function getApiErrorMessage(payload: unknown, fallback: string) {
   return typeof row.error?.message === "string" ? row.error.message : fallback;
 }
 
+
+async function readJsonResponse(response: Response): Promise<unknown> {
+  const text = await response.text();
+
+  if (!text.trim()) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function toQueryString(filters: ReviewFilters, includeMetrics = false) {
   const params = new URLSearchParams();
 
@@ -72,13 +85,14 @@ export async function getReviews(
     }
   );
 
-  const payload = await response.json();
+  const payload = await readJsonResponse(response);
+  const envelope = payload as { success?: boolean } | null;
 
-  if (!response.ok || !payload?.success) {
+  if (!response.ok || !envelope?.success) {
     throw new Error(getApiErrorMessage(payload, "No se pudieron cargar las reseñas."));
   }
 
-  return payload.data as ReviewsPayload;
+  return (payload as { data: ReviewsPayload }).data;
 }
 
 export async function upsertReviewResponse(
@@ -95,11 +109,12 @@ export async function upsertReviewResponse(
     }),
   });
 
-  const payload = await response.json();
+  const payload = await readJsonResponse(response);
+  const envelope = payload as { success?: boolean } | null;
 
-  if (!response.ok || !payload?.success) {
+  if (!response.ok || !envelope?.success) {
     throw new Error(getApiErrorMessage(payload, "No se pudo guardar la respuesta."));
   }
 
-  return payload.data as ReviewResponse;
+  return (payload as { data: ReviewResponse }).data;
 }

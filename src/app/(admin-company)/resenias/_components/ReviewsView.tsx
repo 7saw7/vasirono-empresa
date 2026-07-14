@@ -18,9 +18,11 @@ import { ReviewList } from "./ReviewList";
 
 export function ReviewsView({
   initialPayload,
+  initialError = null,
   branchId,
 }: {
   initialPayload: ReviewsPayload;
+  initialError?: string | null;
   branchId?: number;
 }) {
   const [payload, setPayload] = useState(initialPayload);
@@ -31,7 +33,7 @@ export function ReviewsView({
     pageSize: initialPayload.meta.pageSize,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const initialRequestSkipped = useRef(false);
 
@@ -62,9 +64,12 @@ export function ReviewsView({
   );
 
   useEffect(() => {
-    if (!initialRequestSkipped.current && refreshNonce === 0) {
+    if (!initialRequestSkipped.current) {
       initialRequestSkipped.current = true;
-      return;
+
+      if (!initialError && refreshNonce === 0) {
+        return;
+      }
     }
 
     const controller = new AbortController();
@@ -241,8 +246,17 @@ export function ReviewsView({
       </SectionCard>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-          {error}
+        <div className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <span>{error}</span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={loading}
+            onClick={() => setRefreshNonce((value) => value + 1)}
+          >
+            {loading ? "Reintentando..." : "Reintentar"}
+          </Button>
         </div>
       ) : null}
 

@@ -8,6 +8,7 @@ import { handleRoute } from "@/lib/http/handle-route";
 import { parseWithSchema } from "@/lib/validation/parse";
 import { reviewFiltersSchema } from "@/features/admin-company/reviews/schema";
 import type { ReviewFilters } from "@/features/admin-company/reviews/types";
+import { logger } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 
@@ -31,10 +32,23 @@ export async function GET(request: NextRequest) {
     ) as ReviewFilters;
 
     const includeMetrics = searchParams.get("includeMetrics") === "true";
-    const [payload, metrics] = await Promise.all([
-      getReviewsPayloadQuery(companyId, filters),
-      includeMetrics ? getReviewMetricsQuery(companyId, filters) : Promise.resolve(null),
-    ]);
+    const payload = await getReviewsPayloadQuery(companyId, filters);
+    let metrics = null;
+
+    if (includeMetrics) {
+      try {
+        metrics = await getReviewMetricsQuery(companyId, filters);
+      } catch (error) {
+        logger.warn("reviews_api_metrics_unavailable", {
+          companyId,
+          branchId: filters.branchId ?? null,
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message }
+              : { value: error },
+        });
+      }
+    }
 
     return {
       ...payload,
