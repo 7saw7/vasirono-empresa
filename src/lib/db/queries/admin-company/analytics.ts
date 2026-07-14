@@ -1,6 +1,5 @@
-import { serviceRequest, serviceRequestOptional } from "@/lib/http/service-client";
+import { serviceRequest } from "@/lib/http/service-client";
 import {
-  asArray,
   asRecord,
   pick,
   toNumber,
@@ -17,87 +16,62 @@ import type {
 } from "@/features/admin-company/analytics/types";
 
 export async function getAnalyticsOverviewQuery(
-  _companyId: number,
+  companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<AnalyticsOverview> {
-  const [overview, trafficSeries, scoreHistory, funnel, branches, sourceBreakdown] =
-    await Promise.all([
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/overview",
-        gatewayPath: "/api/analytics/api/company/analytics/overview",
-        query: filters,
-      }),
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/traffic-series",
-        gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
-        query: filters,
-      }),
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/score-history",
-        gatewayPath: "/api/analytics/api/company/analytics/score-history",
-        query: filters,
-      }),
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/funnel",
-        gatewayPath: "/api/analytics/api/company/analytics/funnel",
-        query: filters,
-      }),
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/branches",
-        gatewayPath: "/api/analytics/api/company/analytics/branches",
-        query: filters,
-      }),
-      serviceRequestOptional<unknown>({
-        service: "analytics",
-        companyId: _companyId,
-        directPath: "/api/company/analytics/source-breakdown",
-        gatewayPath: "/api/analytics/api/company/analytics/source-breakdown",
-        query: filters,
-      }),
-    ]);
+  const overview = await serviceRequest<unknown>({
+    service: "analytics",
+    companyId,
+    directPath: "/api/company/analytics/overview",
+    gatewayPath: "/api/analytics/api/company/analytics/overview",
+    query: filters,
+    errorCode: "ANALYTICS_SERVICE_ERROR",
+    errorMessage: "No se pudo cargar Analytics.",
+  });
 
   const overviewRow = asRecord(overview);
+  const summaryRow = asRecord(
+    pick(overviewRow, "summary", "overview", "totals")
+  );
 
   return {
     summary: {
       profileViews: toNumber(
-        pick(overviewRow, "profileViews", "profile_views", "views")
+        pick(summaryRow, "profileViews", "profile_views", "views")
       ),
       favoritesAdded: toNumber(
-        pick(overviewRow, "favoritesAdded", "favorites_added", "favorites")
+        pick(summaryRow, "favoritesAdded", "favorites_added", "favorites")
       ),
       contactClicks: toNumber(
-        pick(overviewRow, "contactClicks", "contact_clicks")
+        pick(summaryRow, "contactClicks", "contact_clicks")
       ),
       reviewsGenerated: toNumber(
-        pick(overviewRow, "reviewsGenerated", "reviews_generated", "reviews")
+        pick(summaryRow, "reviewsGenerated", "reviews_generated", "reviews")
       ),
     },
-    trafficSeries: normalizePoints(trafficSeries),
-    scoreHistory: normalizePoints(scoreHistory),
-    funnel: normalizeFunnel(funnel),
-    branchRanking: normalizeBranchRanking(branches),
-    sourceBreakdown: normalizeSourceBreakdown(sourceBreakdown),
+    trafficSeries: normalizePoints(
+      pick(overviewRow, "trafficSeries", "traffic_series")
+    ),
+    scoreHistory: normalizePoints(
+      pick(overviewRow, "scoreHistory", "score_history")
+    ),
+    funnel: normalizeFunnel(pick(overviewRow, "funnel", "steps")),
+    branchRanking: normalizeBranchRanking(
+      pick(overviewRow, "branchRanking", "branch_ranking", "branches", "ranking")
+    ),
+    sourceBreakdown: normalizeSourceBreakdown(
+      pick(overviewRow, "sourceBreakdown", "source_breakdown", "sources")
+    ),
   };
 }
 
 export async function getAnalyticsBranchRankingQuery(
-  _companyId: number,
+  companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<BranchRankingItem[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
-    companyId: _companyId,
+    companyId,
     directPath: "/api/company/analytics/branches",
     gatewayPath: "/api/analytics/api/company/analytics/branches",
     query: filters,
@@ -108,14 +82,13 @@ export async function getAnalyticsBranchRankingQuery(
   return normalizeBranchRanking(payload);
 }
 
-
 export async function getAnalyticsFunnelQuery(
-  _companyId: number,
+  companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<FunnelStep[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
-    companyId: _companyId,
+    companyId,
     directPath: "/api/company/analytics/funnel",
     gatewayPath: "/api/analytics/api/company/analytics/funnel",
     query: filters,
@@ -127,12 +100,12 @@ export async function getAnalyticsFunnelQuery(
 }
 
 export async function getAnalyticsTrafficSeriesQuery(
-  _companyId: number,
+  companyId: number,
   filters: AnalyticsFilters = {}
 ): Promise<AnalyticsPoint[]> {
   const payload = await serviceRequest<unknown>({
     service: "analytics",
-    companyId: _companyId,
+    companyId,
     directPath: "/api/company/analytics/traffic-series",
     gatewayPath: "/api/analytics/api/company/analytics/traffic-series",
     query: filters,
@@ -148,7 +121,17 @@ function unwrapRows(value: unknown): AnyRecord[] {
 
   const row = asRecord(value);
 
-  for (const key of ["items", "data", "rows", "series", "points", "branches", "ranking", "sources", "steps"]) {
+  for (const key of [
+    "items",
+    "data",
+    "rows",
+    "series",
+    "points",
+    "branches",
+    "ranking",
+    "sources",
+    "steps",
+  ]) {
     const candidate = row[key];
     if (Array.isArray(candidate)) return candidate.map(asRecord);
   }
@@ -191,21 +174,30 @@ function normalizeBranchRanking(value: unknown): BranchRankingItem[] {
       pick(item, "favorites30d", "favorites_30d", "favorites")
     ),
     contactClicks30d: toNumber(
-      pick(item, "contactClicks30d", "contact_clicks_30d", "contactClicks", "contact_clicks")
+      pick(
+        item,
+        "contactClicks30d",
+        "contact_clicks_30d",
+        "contactClicks",
+        "contact_clicks"
+      )
     ),
   }));
 }
 
 function normalizeSourceBreakdown(value: unknown): SourceBreakdownItem[] {
   return unwrapRows(value).map((item) => ({
-    source: toStringValue(pick(item, "source", "eventSource", "event_source"), "direct"),
+    source: toStringValue(
+      pick(item, "source", "eventSource", "event_source"),
+      "direct"
+    ),
     visitsCount: toNumber(pick(item, "visitsCount", "visits_count", "visits")),
     favoritesCount: toNumber(
       pick(item, "favoritesCount", "favorites_count", "favorites")
     ),
-    contactClicks: toNumber(
-      pick(item, "contactClicks", "contact_clicks")
+    contactClicks: toNumber(pick(item, "contactClicks", "contact_clicks")),
+    reviewsCount: toNumber(
+      pick(item, "reviewsCount", "reviews_count", "reviews")
     ),
-    reviewsCount: toNumber(pick(item, "reviewsCount", "reviews_count", "reviews")),
   }));
 }

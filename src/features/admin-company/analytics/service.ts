@@ -44,14 +44,19 @@ export async function getAnalyticsOverview(
   return payload.data as AnalyticsOverview;
 }
 
-export async function getAnalyticsBranchRanking(): Promise<BranchRankingItem[]> {
-  const response = await fetch("/api/admin-company/analytics/branches", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
+export async function getAnalyticsBranchRanking(
+  filters: AnalyticsFilters = {}
+): Promise<BranchRankingItem[]> {
+  const response = await fetch(
+    `/api/admin-company/analytics/branches${toQueryString(filters)}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    }
+  );
 
   const payload = await response.json();
 

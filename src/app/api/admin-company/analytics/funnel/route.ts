@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
       {
         from: searchParams.get("from"),
         to: searchParams.get("to"),
+        branchId: searchParams.get("branchId"),
+        source: searchParams.get("source"),
       },
       "El rango del funnel no es válido."
     );
