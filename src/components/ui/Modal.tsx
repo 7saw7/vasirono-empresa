@@ -10,6 +10,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
+
+type ModalSize = "md" | "lg" | "xl";
 
 type ModalProps = {
   open: boolean;
@@ -18,6 +21,14 @@ type ModalProps = {
   children: ReactNode;
   onClose: () => void;
   footer?: ReactNode;
+  size?: ModalSize;
+  closeDisabled?: boolean;
+};
+
+const SIZE_CLASSES: Record<ModalSize, string> = {
+  md: "max-w-2xl",
+  lg: "max-w-3xl",
+  xl: "max-w-5xl",
 };
 
 function getFocusableElements(container: HTMLElement) {
@@ -30,8 +41,8 @@ function getFocusableElements(container: HTMLElement) {
         'input:not([disabled])',
         'select:not([disabled])',
         '[tabindex]:not([tabindex="-1"])',
-      ].join(",")
-    )
+      ].join(","),
+    ),
   ).filter((element) => !element.hasAttribute("aria-hidden"));
 }
 
@@ -42,6 +53,8 @@ export function Modal({
   children,
   onClose,
   footer,
+  size = "md",
+  closeDisabled = false,
 }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -51,8 +64,10 @@ export function Modal({
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
+        if (!closeDisabled) {
+          event.preventDefault();
+          onClose();
+        }
         return;
       }
 
@@ -84,7 +99,7 @@ export function Modal({
         first.focus();
       }
     },
-    [onClose]
+    [closeDisabled, onClose],
   );
 
   useEffect(() => {
@@ -115,9 +130,9 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm sm:p-6"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (event.target === event.currentTarget && !closeDisabled) {
           onClose();
         }
       }}
@@ -128,12 +143,16 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
+        aria-busy={closeDisabled || undefined}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white shadow-2xl outline-none dark:border-slate-700 dark:bg-[#101821]"
+        className={cn(
+          "w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl outline-none dark:border-slate-700 dark:bg-[#101821]",
+          SIZE_CLASSES[size],
+        )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-slate-700">
-          <div className="space-y-1">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-700 sm:px-6 sm:py-5">
+          <div className="min-w-0 space-y-1">
             <h2
               id={titleId}
               className="text-lg font-semibold tracking-tight text-slate-950 dark:text-slate-100"
@@ -141,7 +160,10 @@ export function Modal({
               {title}
             </h2>
             {description ? (
-              <p id={descriptionId} className="text-sm text-slate-600 dark:text-slate-400">
+              <p
+                id={descriptionId}
+                className="text-sm leading-6 text-slate-600 dark:text-slate-400"
+              >
                 {description}
               </p>
             ) : null}
@@ -150,20 +172,27 @@ export function Modal({
           <Button
             type="button"
             variant="ghost"
+            size="sm"
             onClick={onClose}
+            disabled={closeDisabled}
             aria-label="Cerrar modal"
+            className="shrink-0"
           >
             Cerrar
           </Button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
+        <div className="max-h-[calc(100dvh-12rem)] overflow-y-auto px-5 py-5 sm:px-6">
+          {children}
+        </div>
 
         {footer ? (
-          <div className="border-t border-slate-200 px-6 py-4 dark:border-slate-700">{footer}</div>
+          <div className="border-t border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/35 sm:px-6">
+            {footer}
+          </div>
         ) : null}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

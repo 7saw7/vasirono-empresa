@@ -1,17 +1,46 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from "react";
-import { CalendarDays, CheckCircle2, ImagePlus, Lock, Megaphone, PauseCircle, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  ArrowUpRight,
+  Percent,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Eye,
+  Pencil,
+  ImagePlus,
+  Lock,
+  Megaphone,
+  PauseCircle,
+  Plus,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { StatCard } from "@/components/ui/StatCard";
 import { Textarea } from "@/components/ui/Textarea";
-import { formatDate } from "@/lib/utils/dates";
 import type { BranchListItem } from "@/features/admin-company/branches/types";
-import type { PromotionGate, PromotionListItem, PromotionPagination, PromotionRedemptionItem } from "@/features/admin-company/promotions/types";
+import type {
+  PromotionGate,
+  PromotionListItem,
+  PromotionPagination,
+  PromotionRedemptionItem,
+} from "@/features/admin-company/promotions/types";
+import { ADMIN_COMPANY_ROUTES } from "@/lib/constants/admin-company-routes";
+import { cn } from "@/lib/utils/cn";
+import { formatDate } from "@/lib/utils/dates";
 
 type Props = {
   initialPromotions: PromotionListItem[];
@@ -36,6 +65,13 @@ type FormState = {
   active: boolean;
 };
 
+type StatusAction = "activate" | "pause" | "delete";
+
+type PendingAction = {
+  promotion: PromotionListItem;
+  action: StatusAction;
+};
+
 const EMPTY_FORM: FormState = {
   branchId: "",
   title: "",
@@ -51,28 +87,143 @@ const EMPTY_FORM: FormState = {
   active: false,
 };
 
-export function PromotionsView({ initialPromotions, initialPagination, gate, branches }: Props) {
+export function PromotionsView({
+  initialPromotions,
+  initialPagination,
+  gate,
+  branches,
+}: Props) {
   const [promotions, setPromotions] = useState(initialPromotions);
   const [pagination, setPagination] = useState(initialPagination);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [formOpen, setFormOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [openRedemptions, setOpenRedemptions] = useState<Record<number, PromotionRedemptionItem[]>>({});
-  const [isPending, startTransition] = useTransition();
+  const [busy, setBusy] = useState<"save" | "cover" | "refresh" | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [redemptionsBusyId, setRedemptionsBusyId] = useState<number | null>(null);
+  const [openRedemptions, setOpenRedemptions] = useState<
+    Record<number, PromotionRedemptionItem[]>
+  >({});
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const activeCount = useMemo(
     () => promotions.filter((item) => item.isPubliclyAvailable || item.active).length,
     [promotions],
   );
 
-  function refresh() {
-    startTransition(async () => {
-      const response = await fetch("/api/admin-company/promotions", { cache: "no-store" });
-      const payload = await response.json();
+  const filteredPromotions = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return promotions.filter((promotion) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        promotion.title.toLowerCase().includes(normalizedSearch) ||
+        promotion.branchName.toLowerCase().includes(normalizedSearch) ||
+        (promotion.description ?? "").toLowerCase().includes(normalizedSearch);
+
+      if (!matchesSearch) return false;
+      if (statusFilter === "all") return true;
+      if (statusFilter === "active") {
+        return promotion.active || promotion.isPubliclyAvailable;
+      }
+      if (statusFilter === "inactive") {
+        return !promotion.active && !promotion.isPubliclyAvailable;
+      }
+
+      return promotion.status.toLowerCase() === statusFilter;
+    });
+  }, [promotions, search, statusFilter]);
+
+  const canCreate = gate.canCreatePromotions && branches.length > 0;
+
+  async function refresh() {
+    setBusy("refresh");
+
+    try {
+      const response = await fetch("/api/admin-company/promotions", {
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "No se pudo actualizar la lista.");
+      }
+
       const data = payload?.data ?? payload;
       setPromotions(data?.items ?? []);
       setPagination(data?.pagination ?? pagination);
+    } catch (caught) {
+      setError(getErrorMessage(caught, "No se pudo actualizar la lista."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function openCreateModal() {
+    setError(null);
+    setMessage(null);
+
+    if (!gate.canCreatePromotions) {
+      setError("Primero completa los requisitos comerciales indicados arriba.");
+      return;
+    }
+
+    if (branches.length === 0) {
+      setError("Crea una sucursal antes de registrar una promoción.");
+      return;
+    }
+
+    setForm(EMPTY_FORM);
+    setFormOpen(true);
+  }
+
+  function closeFormModal() {
+    if (busy === "save" || busy === "cover") return;
+    setFormOpen(false);
+    setForm(EMPTY_FORM);
+  }
+
+  function editPromotion(promotion: PromotionListItem) {
+    setError(null);
+    setMessage(null);
+    setForm({
+      promotionId: promotion.promotionId,
+      branchId: String(promotion.branchId),
+      title: promotion.title,
+      description: promotion.description ?? "",
+      terms: promotion.terms ?? "",
+      discountPercent:
+        promotion.discountPercent === null ? "" : String(promotion.discountPercent),
+      startDate: toDateInput(promotion.startDate),
+      endDate: toDateInput(promotion.endDate),
+      coverUrl: promotion.coverUrl ?? "",
+      maxRedemptions:
+        promotion.maxRedemptions === null ? "" : String(promotion.maxRedemptions),
+      maxRedemptionsPerUser: String(promotion.maxRedemptionsPerUser || 1),
+      requiresStaffValidation: promotion.requiresStaffValidation,
+      active: promotion.active || promotion.isPubliclyAvailable,
     });
+    setFormOpen(true);
+  }
+
+  function validateForm() {
+    if (!form.branchId) return "Selecciona una sucursal.";
+    if (form.title.trim().length < 3) {
+      return "El título debe tener al menos 3 caracteres.";
+    }
+    if (form.startDate && form.endDate && form.endDate < form.startDate) {
+      return "La fecha de fin debe ser igual o posterior a la fecha de inicio.";
+    }
+    if (
+      form.maxRedemptionsPerUser &&
+      Number(form.maxRedemptionsPerUser) < 1
+    ) {
+      return "El límite por usuario debe ser mayor que cero.";
+    }
+    return null;
   }
 
   async function submitPromotion(event: FormEvent<HTMLFormElement>) {
@@ -80,41 +231,59 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
     setError(null);
     setMessage(null);
 
-    const body = {
-      branchId: Number(form.branchId),
-      title: form.title,
-      description: form.description || null,
-      terms: form.terms || null,
-      discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
-      startDate: form.startDate || null,
-      endDate: form.endDate || null,
-      active: form.active,
-      coverUrl: form.coverUrl || null,
-      maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
-      maxRedemptionsPerUser: Number(form.maxRedemptionsPerUser || 1),
-      requiresStaffValidation: form.requiresStaffValidation,
-    };
-
-    const url = form.promotionId
-      ? `/api/admin-company/promotions/${form.promotionId}`
-      : "/api/admin-company/promotions";
-    const method = form.promotionId ? "PATCH" : "POST";
-
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      setError(payload?.error?.message ?? "No se pudo guardar la promoción.");
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    setMessage(form.promotionId ? "Promoción actualizada." : "Promoción creada.");
-    setForm(EMPTY_FORM);
-    refresh();
+    setBusy("save");
+
+    try {
+      const body = {
+        branchId: Number(form.branchId),
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        terms: form.terms.trim() || null,
+        discountPercent: form.discountPercent
+          ? Number(form.discountPercent)
+          : null,
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
+        active: gate.canCreatePromotions ? form.active : false,
+        coverUrl: form.coverUrl.trim() || null,
+        maxRedemptions: form.maxRedemptions
+          ? Number(form.maxRedemptions)
+          : null,
+        maxRedemptionsPerUser: Number(form.maxRedemptionsPerUser || 1),
+        requiresStaffValidation: form.requiresStaffValidation,
+      };
+
+      const url = form.promotionId
+        ? `/api/admin-company/promotions/${form.promotionId}`
+        : "/api/admin-company/promotions";
+      const method = form.promotionId ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "No se pudo guardar la promoción.");
+      }
+
+      setMessage(form.promotionId ? "Promoción actualizada." : "Promoción creada.");
+      setFormOpen(false);
+      setForm(EMPTY_FORM);
+      await refresh();
+    } catch (caught) {
+      setError(getErrorMessage(caught, "No se pudo guardar la promoción."));
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function uploadCover(file: File | null) {
@@ -122,45 +291,86 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
     setError(null);
     setMessage(null);
 
-    const body = new FormData();
-    body.set("file", file);
-    body.set("altText", form.title || "Portada de promoción");
-
-    const response = await fetch("/api/admin-company/promotions/cover", {
-      method: "POST",
-      body,
-    });
-    const payload = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      setError(payload?.error?.message ?? "No se pudo subir la portada.");
+    if (!file.type.startsWith("image/")) {
+      setError("Selecciona un archivo de imagen válido.");
       return;
     }
 
-    const url = payload?.data?.url ?? payload?.url;
-    if (url) {
+    if (file.size > 10 * 1024 * 1024) {
+      setError("La portada no puede superar los 10 MB.");
+      return;
+    }
+
+    setBusy("cover");
+
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      body.set("altText", form.title || "Portada de promoción");
+
+      const response = await fetch("/api/admin-company/promotions/cover", {
+        method: "POST",
+        body,
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "No se pudo subir la portada.");
+      }
+
+      const url = payload?.data?.url ?? payload?.url;
+      if (typeof url !== "string" || !url) {
+        throw new Error("Media Service no devolvió la URL de la portada.");
+      }
+
       setForm((current) => ({ ...current, coverUrl: url }));
-      setMessage("Portada subida y enlazada al formulario.");
+      setMessage("Portada cargada correctamente.");
+    } catch (caught) {
+      setError(getErrorMessage(caught, "No se pudo subir la portada."));
+    } finally {
+      setBusy(null);
     }
   }
 
-  async function mutateStatus(promotionId: number, action: "activate" | "pause" | "delete") {
+  async function confirmStatusAction() {
+    if (!pendingAction) return;
+
+    setStatusBusy(true);
     setError(null);
     setMessage(null);
-    const method = action === "delete" ? "DELETE" : "PATCH";
-    const suffix = action === "delete" ? "" : `/${action}`;
-    const response = await fetch(`/api/admin-company/promotions/${promotionId}${suffix}`, { method });
-    const payload = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      setError(payload?.error?.message ?? "No se pudo actualizar la promoción.");
-      return;
+    try {
+      const { promotion, action } = pendingAction;
+      const method = action === "delete" ? "DELETE" : "PATCH";
+      const suffix = action === "delete" ? "" : `/${action}`;
+      const response = await fetch(
+        `/api/admin-company/promotions/${promotion.promotionId}${suffix}`,
+        { method },
+      );
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.error?.message ?? "No se pudo actualizar la promoción.",
+        );
+      }
+
+      setMessage(
+        action === "activate"
+          ? "Promoción activada."
+          : action === "pause"
+            ? "Promoción pausada."
+            : "Promoción archivada.",
+      );
+      setPendingAction(null);
+      await refresh();
+    } catch (caught) {
+      setPendingAction(null);
+      setError(getErrorMessage(caught, "No se pudo actualizar la promoción."));
+    } finally {
+      setStatusBusy(false);
     }
-
-    setMessage(action === "activate" ? "Promoción activada." : action === "pause" ? "Promoción pausada." : "Promoción archivada.");
-    refresh();
   }
-
 
   async function toggleRedemptions(promotionId: number) {
     if (openRedemptions[promotionId]) {
@@ -172,170 +382,830 @@ export function PromotionsView({ initialPromotions, initialPagination, gate, bra
       return;
     }
 
-    const response = await fetch(`/api/admin-company/promotions/${promotionId}/redemptions`, { cache: "no-store" });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(payload?.error?.message ?? "No se pudieron cargar las redenciones.");
-      return;
-    }
-    setOpenRedemptions((current) => ({ ...current, [promotionId]: payload?.data ?? [] }));
-  }
+    setRedemptionsBusyId(promotionId);
+    setError(null);
 
-  function editPromotion(promotion: PromotionListItem) {
-    setForm({
-      promotionId: promotion.promotionId,
-      branchId: String(promotion.branchId),
-      title: promotion.title,
-      description: promotion.description ?? "",
-      terms: promotion.terms ?? "",
-      discountPercent: promotion.discountPercent === null ? "" : String(promotion.discountPercent),
-      startDate: promotion.startDate ?? "",
-      endDate: promotion.endDate ?? "",
-      coverUrl: promotion.coverUrl ?? "",
-      maxRedemptions: promotion.maxRedemptions === null ? "" : String(promotion.maxRedemptions),
-      maxRedemptionsPerUser: String(promotion.maxRedemptionsPerUser || 1),
-      requiresStaffValidation: promotion.requiresStaffValidation,
-      active: promotion.active || promotion.isPubliclyAvailable,
-    });
+    try {
+      const response = await fetch(
+        `/api/admin-company/promotions/${promotionId}/redemptions`,
+        { cache: "no-store" },
+      );
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.error?.message ?? "No se pudieron cargar las redenciones.",
+        );
+      }
+
+      setOpenRedemptions((current) => ({
+        ...current,
+        [promotionId]: payload?.data ?? [],
+      }));
+    } catch (caught) {
+      setError(getErrorMessage(caught, "No se pudieron cargar las redenciones."));
+    } finally {
+      setRedemptionsBusyId(null);
+    }
   }
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-neutral-950 p-6 text-white shadow-sm dark:shadow-none">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200">Promociones</p>
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Ofertas visibles para clientes de Vasirono</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-              Crea, pausa y archiva promociones respetando el plan activo y el nivel de verificación del negocio.
-            </p>
+      <header className="overflow-hidden rounded-3xl border border-slate-800 bg-neutral-950 text-white shadow-sm">
+        <div className="relative p-6 sm:p-8">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-sky-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                Promociones
+              </p>
+              <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+                Ofertas visibles para tus clientes
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                Crea campañas por sucursal, controla su vigencia y revisa las redenciones desde un solo lugar.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <StatusBadge
+                label={gate.canCreatePromotions ? "Módulo habilitado" : "Requisitos pendientes"}
+                tone={gate.canCreatePromotions ? "success" : "warning"}
+              />
+              <Button
+                type="button"
+                size="lg"
+                onClick={openCreateModal}
+                disabled={!canCreate}
+                className="min-w-44"
+              >
+                {gate.canCreatePromotions ? (
+                  <Plus className="mr-2 h-4 w-4" />
+                ) : (
+                  <Lock className="mr-2 h-4 w-4" />
+                )}
+                Nueva promoción
+              </Button>
+            </div>
           </div>
-          <StatusBadge label={gate.canCreatePromotions ? "Habilitado" : "Bloqueado"} tone={gate.canCreatePromotions ? "success" : "warning"} />
         </div>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Promociones" value={String(pagination.total)} helper="Total registradas" />
-        <StatCard label="Activas" value={String(activeCount)} helper="Visibles o aprobadas" />
-        <StatCard label="Límite del plan" value={gate.promotionLimit === null ? "Ilimitado" : String(gate.promotionLimit)} helper={gate.planLabel} />
-        <StatCard label="Verificación" value={gate.verifiedForPromotions ? "OK" : "Pendiente"} helper={gate.verificationLabel} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Promociones"
+          value={String(pagination.total)}
+          helper="Total registradas"
+        />
+        <StatCard
+          label="Activas"
+          value={String(activeCount)}
+          helper="Visibles para clientes"
+        />
+        <StatCard
+          label="Límite del plan"
+          value={gate.promotionLimit === null ? "Ilimitado" : String(gate.promotionLimit)}
+          helper={gate.planLabel}
+        />
+        <StatCard
+          label="Verificación"
+          value={gate.verifiedForPromotions ? "Cumple" : "Pendiente"}
+          helper={gate.verificationLabel}
+        />
       </div>
 
-      {!gate.canCreatePromotions ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-          <div className="flex items-start gap-3">
-            <Lock className="mt-0.5 h-5 w-5 shrink-0" />
-            <div>
-              <p className="font-semibold">Promociones bloqueadas por reglas comerciales.</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5">
-                {gate.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-              </ul>
+      {!gate.canCreatePromotions ? <PromotionGatePanel gate={gate} /> : null}
+
+      {gate.canCreatePromotions && branches.length === 0 ? (
+        <div className="rounded-3xl border border-amber-300 bg-amber-50 p-5 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-200">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Building2 className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-semibold">Necesitas una sucursal</p>
+                <p className="mt-1 text-sm opacity-85">
+                  Cada promoción debe estar asociada a una ubicación del negocio.
+                </p>
+              </div>
             </div>
+            <Button asChild variant="secondary">
+              <Link href="/sucursales/nueva">Crear sucursal</Link>
+            </Button>
           </div>
         </div>
       ) : null}
 
-      {message ? <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div> : null}
+      {message ? <Feedback tone="success" message={message} /> : null}
+      {error ? <Feedback tone="error" message={error} /> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <SectionCard
-          title={form.promotionId ? "Editar promoción" : "Nueva promoción"}
-          description="Las publicaciones activas requieren plan Pro/Premium y verificación mínima."
-        >
-          <form className="space-y-4" onSubmit={submitPromotion}>
-            <Select label="Sucursal" value={form.branchId} onChange={(event) => setForm({ ...form, branchId: event.target.value })} required>
-              <option value="">Selecciona sucursal</option>
-              {branches.map((branch) => <option key={branch.branchId} value={branch.branchId}>{branch.name}</option>)}
-            </Select>
-            <Input label="Título" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="2x1 en postres de la casa" required />
-            <Textarea label="Descripción" rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Describe la oferta y qué la hace atractiva." />
-            <Textarea label="Términos" rows={3} value={form.terms} onChange={(event) => setForm({ ...form, terms: event.target.value })} placeholder="Válido de lunes a viernes, no acumulable..." />
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input label="Descuento %" type="number" min="0" max="100" value={form.discountPercent} onChange={(event) => setForm({ ...form, discountPercent: event.target.value })} />
-              <Input label="Máximo redenciones" type="number" min="1" value={form.maxRedemptions} onChange={(event) => setForm({ ...form, maxRedemptions: event.target.value })} />
-              <Input label="Inicio" type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
-              <Input label="Fin" type="date" value={form.endDate} onChange={(event) => setForm({ ...form, endDate: event.target.value })} />
-            </div>
-            <Input label="URL de portada" value={form.coverUrl} onChange={(event) => setForm({ ...form, coverUrl: event.target.value })} placeholder="https://..." />
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-slate-50 dark:bg-slate-900/50 px-4 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/70">
-              <ImagePlus className="h-4 w-4" /> Subir portada desde media-service
-              <input type="file" accept="image/*" className="hidden" onChange={(event) => uploadCover(event.target.files?.[0] ?? null)} />
-            </label>
-            <div className="grid gap-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-4 text-sm text-slate-700 dark:text-slate-300 md:grid-cols-2">
-              <label className="flex items-center gap-2"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={form.requiresStaffValidation} onChange={(event) => setForm({ ...form, requiresStaffValidation: event.target.checked })} /> Requiere validación por staff</label>
-              <label className="flex items-center gap-2"><input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-sky-500 dark:border-slate-600 dark:bg-slate-900" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} disabled={!gate.canCreatePromotions} /> Publicar como activa</label>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button type="submit" disabled={isPending || (!gate.canCreatePromotions && !form.promotionId)}>
-                <Plus className="mr-2 h-4 w-4" /> {form.promotionId ? "Guardar cambios" : "Crear promoción"}
-              </Button>
-              {form.promotionId ? <Button type="button" variant="secondary" onClick={() => setForm(EMPTY_FORM)}>Cancelar edición</Button> : null}
-            </div>
-          </form>
-        </SectionCard>
-
-        <SectionCard title="Promociones del negocio" description="Listado operativo con estado, redenciones y acciones rápidas.">
-          <div className="space-y-4">
-            {promotions.length ? promotions.map((promotion) => (
-              <article key={promotion.promotionId} className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101821] shadow-sm dark:shadow-none">
-                {promotion.coverUrl ? <img src={promotion.coverUrl} alt="" className="h-40 w-full object-cover" /> : null}
-                <div className="p-5">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge label={promotion.statusName ?? promotion.status} tone={statusTone(promotion.status, promotion.isPubliclyAvailable)} />
-                        {promotion.isPubliclyAvailable ? <StatusBadge label="Visible en app" tone="success" /> : null}
-                      </div>
-                      <h3 className="mt-3 text-xl font-semibold text-slate-950 dark:text-slate-100">{promotion.title}</h3>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{promotion.branchName}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button type="button" size="sm" variant="secondary" onClick={() => editPromotion(promotion)}>Editar</Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => toggleRedemptions(promotion.promotionId)}>{openRedemptions[promotion.promotionId] ? "Ocultar" : "Redenciones"}</Button>
-                      {promotion.isPubliclyAvailable || promotion.active ? (
-                        <Button type="button" size="sm" variant="secondary" onClick={() => mutateStatus(promotion.promotionId, "pause")}><PauseCircle className="mr-1 h-4 w-4" /> Pausar</Button>
-                      ) : (
-                        <Button type="button" size="sm" variant="secondary" disabled={!gate.canCreatePromotions} onClick={() => mutateStatus(promotion.promotionId, "activate")}><CheckCircle2 className="mr-1 h-4 w-4" /> Activar</Button>
-                      )}
-                      <Button type="button" size="sm" variant="danger" onClick={() => mutateStatus(promotion.promotionId, "delete")}><Trash2 className="mr-1 h-4 w-4" /> Archivar</Button>
-                    </div>
-                  </div>
-                  {promotion.description ? <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">{promotion.description}</p> : null}
-                  <div className="mt-4 grid gap-3 text-sm md:grid-cols-4">
-                    <Metric label="Descuento" value={promotion.discountPercent === null ? "—" : `${promotion.discountPercent}%`} />
-                    <Metric label="Vigencia" value={`${formatDate(promotion.startDate)} - ${formatDate(promotion.endDate)}`} icon={<CalendarDays className="h-4 w-4" />} />
-                    <Metric label="Redenciones" value={`${promotion.redemptionsTotal}/${promotion.maxRedemptions ?? "∞"}`} />
-                    <Metric label="Por usuario" value={String(promotion.maxRedemptionsPerUser)} />
-                  </div>
-                  {openRedemptions[promotion.promotionId] ? (
-                    <RedemptionsList items={openRedemptions[promotion.promotionId]} />
-                  ) : null}
-                </div>
-              </article>
-            )) : (
-              <div className="rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                <Megaphone className="mx-auto mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" />
-                Aún no hay promociones registradas para esta empresa.
-              </div>
-            )}
+      <SectionCard
+        title="Promociones del negocio"
+        description="Busca, revisa el estado y ejecuta acciones sin perder el contexto de la lista."
+      >
+        <div className="mb-5 grid gap-3 md:grid-cols-[1fr_220px_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por título, sucursal o descripción"
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-500/20"
+              aria-label="Buscar promociones"
+            />
           </div>
-        </SectionCard>
+
+          <Select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filtrar promociones por estado"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="active">Activas</option>
+            <option value="inactive">No activas</option>
+            <option value="draft">Borradores</option>
+            <option value="paused">Pausadas</option>
+            <option value="pending_review">En revisión</option>
+            <option value="rejected">Rechazadas</option>
+            <option value="expired">Expiradas</option>
+          </Select>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={refresh}
+            disabled={busy === "refresh"}
+          >
+            {busy === "refresh" ? "Actualizando..." : "Actualizar"}
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {filteredPromotions.length ? (
+            filteredPromotions.map((promotion) => (
+              <PromotionCard
+                key={promotion.promotionId}
+                promotion={promotion}
+                gate={gate}
+                redemptions={openRedemptions[promotion.promotionId]}
+                redemptionsLoading={redemptionsBusyId === promotion.promotionId}
+                onEdit={() => editPromotion(promotion)}
+                onToggleRedemptions={() => toggleRedemptions(promotion.promotionId)}
+                onAction={(action) => setPendingAction({ promotion, action })}
+              />
+            ))
+          ) : (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-10 text-center dark:border-slate-700 dark:bg-slate-900/35">
+              <Megaphone className="mx-auto h-9 w-9 text-slate-400" />
+              <p className="mt-3 font-semibold text-slate-800 dark:text-slate-100">
+                {promotions.length
+                  ? "No hay promociones que coincidan con el filtro"
+                  : "Aún no hay promociones registradas"}
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+                {promotions.length
+                  ? "Prueba con otro término o selecciona todos los estados."
+                  : gate.canCreatePromotions
+                    ? "Crea tu primera oferta para comenzar a atraer clientes."
+                    : "Completa los requisitos comerciales para crear una nueva oferta."}
+              </p>
+              {!promotions.length && canCreate ? (
+                <Button type="button" onClick={openCreateModal} className="mt-5">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear primera promoción
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </SectionCard>
+
+      <PromotionFormModal
+        open={formOpen}
+        form={form}
+        setForm={setForm}
+        branches={branches}
+        gate={gate}
+        busy={busy}
+        error={error}
+        message={message}
+        onClose={closeFormModal}
+        onSubmit={submitPromotion}
+        onUploadCover={uploadCover}
+      />
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onClose={() => {
+          if (!statusBusy) setPendingAction(null);
+        }}
+        onConfirm={confirmStatusAction}
+        loading={statusBusy}
+        title={confirmationCopy(pendingAction).title}
+        description={confirmationCopy(pendingAction).description}
+        confirmLabel={confirmationCopy(pendingAction).confirmLabel}
+        confirmVariant={pendingAction?.action === "delete" ? "danger" : "primary"}
+      />
+    </div>
+  );
+}
+
+function PromotionGatePanel({ gate }: { gate: PromotionGate }) {
+  return (
+    <div className="rounded-3xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 p-5 text-amber-950 dark:border-amber-900/60 dark:from-amber-950/30 dark:to-orange-950/20 dark:text-amber-100 sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <Lock className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-bold">Completa los requisitos para publicar</p>
+            <p className="mt-1 text-sm leading-6 opacity-85">
+              Tus promociones existentes siguen disponibles para consulta y administración.
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {gate.reasons.map((reason) => (
+                <li key={reason} className="flex items-start gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {!gate.planAllowsPromotions ? (
+            <Button asChild variant="secondary">
+              <Link href={ADMIN_COMPANY_ROUTES.billing}>
+                Ver planes
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          ) : null}
+          {!gate.verifiedForPromotions ? (
+            <Button asChild>
+              <Link href={ADMIN_COMPANY_ROUTES.verifications}>
+                Completar verificación
+                <ShieldCheck className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 }
 
-function Metric({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
+function PromotionFormModal({
+  open,
+  form,
+  setForm,
+  branches,
+  gate,
+  busy,
+  error,
+  message,
+  onClose,
+  onSubmit,
+  onUploadCover,
+}: {
+  open: boolean;
+  form: FormState;
+  setForm: (value: FormState | ((current: FormState) => FormState)) => void;
+  branches: BranchListItem[];
+  gate: PromotionGate;
+  busy: "save" | "cover" | "refresh" | null;
+  error: string | null;
+  message: string | null;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onUploadCover: (file: File | null) => void;
+}) {
+  const editing = Boolean(form.promotionId);
+  const formBusy = busy === "save" || busy === "cover";
+
   return (
-    <div className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-3">
-      <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">{icon}{label}</p>
-      <p className="mt-1 font-semibold text-slate-950 dark:text-slate-100">{value}</p>
+    <Modal
+      open={open}
+      onClose={onClose}
+      closeDisabled={formBusy}
+      size="xl"
+      title={editing ? "Editar promoción" : "Nueva promoción"}
+      description={
+        editing
+          ? "Actualiza la oferta sin perder su historial de redenciones."
+          : "Completa la información principal y decide si deseas publicarla inmediatamente."
+      }
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={formBusy}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="promotion-form" disabled={formBusy}>
+            {busy === "save" ? (
+              "Guardando..."
+            ) : (
+              <>
+                {editing ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                {editing ? "Guardar cambios" : "Crear promoción"}
+              </>
+            )}
+          </Button>
+        </div>
+      }
+    >
+      <form id="promotion-form" className="space-y-6" onSubmit={onSubmit}>
+        {message ? <Feedback tone="success" message={message} /> : null}
+        {error ? <Feedback tone="error" message={error} /> : null}
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Sucursal"
+                value={form.branchId}
+                onChange={(event) => setForm({ ...form, branchId: event.target.value })}
+                required
+                disabled={formBusy}
+              >
+                <option value="">Selecciona sucursal</option>
+                {branches.map((branch) => (
+                  <option key={branch.branchId} value={branch.branchId}>
+                    {branch.name}
+                  </option>
+                ))}
+              </Select>
+
+              <Input
+                label="Descuento %"
+                type="number"
+                min="0"
+                max="100"
+                value={form.discountPercent}
+                onChange={(event) =>
+                  setForm({ ...form, discountPercent: event.target.value })
+                }
+                placeholder="20"
+                disabled={formBusy}
+              />
+            </div>
+
+            <Input
+              label="Título"
+              value={form.title}
+              onChange={(event) => setForm({ ...form, title: event.target.value })}
+              placeholder="2x1 en postres de la casa"
+              maxLength={120}
+              required
+              disabled={formBusy}
+              hint={`${form.title.length}/120 caracteres`}
+            />
+
+            <Textarea
+              label="Descripción"
+              rows={4}
+              value={form.description}
+              onChange={(event) =>
+                setForm({ ...form, description: event.target.value })
+              }
+              placeholder="Explica el beneficio de forma clara y atractiva."
+              disabled={formBusy}
+            />
+
+            <Textarea
+              label="Términos y condiciones"
+              rows={3}
+              value={form.terms}
+              onChange={(event) => setForm({ ...form, terms: event.target.value })}
+              placeholder="Válido de lunes a viernes, no acumulable..."
+              disabled={formBusy}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/35">
+              {form.coverUrl ? (
+                <img
+                  src={form.coverUrl}
+                  alt="Vista previa de la promoción"
+                  className="h-44 w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-44 flex-col items-center justify-center px-6 text-center text-slate-500 dark:text-slate-400">
+                  <ImagePlus className="h-8 w-8" />
+                  <p className="mt-2 text-sm font-medium">Añade una portada atractiva</p>
+                  <p className="mt-1 text-xs">Recomendado: formato horizontal.</p>
+                </div>
+              )}
+
+              <div className="border-t border-slate-200 p-4 dark:border-slate-700">
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-400 hover:text-sky-700 dark:border-slate-700 dark:bg-[#101821] dark:text-slate-200 dark:hover:border-sky-600 dark:hover:text-sky-300",
+                    formBusy && "pointer-events-none opacity-60",
+                  )}
+                >
+                  {busy === "cover" ? (
+                    <UploadCloud className="h-4 w-4" />
+                  ) : (
+                    <ImagePlus className="h-4 w-4" />
+                  )}
+                  {busy === "cover" ? "Subiendo portada..." : "Seleccionar portada"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={formBusy}
+                    onChange={(event) => onUploadCover(event.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <Input
+              label="URL de portada"
+              value={form.coverUrl}
+              onChange={(event) => setForm({ ...form, coverUrl: event.target.value })}
+              placeholder="Se completa al subir una imagen"
+              disabled={formBusy}
+              hint="También puedes pegar una URL de imagen válida."
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+          <p className="font-semibold text-slate-950 dark:text-white">Vigencia y límites</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Input
+              label="Inicio"
+              type="date"
+              value={form.startDate}
+              onChange={(event) => setForm({ ...form, startDate: event.target.value })}
+              disabled={formBusy}
+            />
+            <Input
+              label="Fin"
+              type="date"
+              min={form.startDate || undefined}
+              value={form.endDate}
+              onChange={(event) => setForm({ ...form, endDate: event.target.value })}
+              disabled={formBusy}
+            />
+            <Input
+              label="Máximo de redenciones"
+              type="number"
+              min="1"
+              value={form.maxRedemptions}
+              onChange={(event) =>
+                setForm({ ...form, maxRedemptions: event.target.value })
+              }
+              placeholder="Sin límite"
+              disabled={formBusy}
+            />
+            <Input
+              label="Por usuario"
+              type="number"
+              min="1"
+              value={form.maxRedemptionsPerUser}
+              onChange={(event) =>
+                setForm({ ...form, maxRedemptionsPerUser: event.target.value })
+              }
+              disabled={formBusy}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ToggleCard
+            checked={form.requiresStaffValidation}
+            onChange={(checked) => setForm({ ...form, requiresStaffValidation: checked })}
+            title="Validación por personal"
+            description="El equipo confirma el canje antes de marcarlo como utilizado."
+            icon={Users}
+            disabled={formBusy}
+          />
+          <ToggleCard
+            checked={form.active}
+            onChange={(checked) => setForm({ ...form, active: checked })}
+            title="Publicar al guardar"
+            description={
+              gate.canCreatePromotions
+                ? "La promoción quedará activa si cumple todas las reglas."
+                : "No disponible hasta cumplir plan y verificación."
+            }
+            icon={Eye}
+            disabled={formBusy || !gate.canCreatePromotions}
+          />
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function PromotionCard({
+  promotion,
+  gate,
+  redemptions,
+  redemptionsLoading,
+  onEdit,
+  onToggleRedemptions,
+  onAction,
+}: {
+  promotion: PromotionListItem;
+  gate: PromotionGate;
+  redemptions?: PromotionRedemptionItem[];
+  redemptionsLoading: boolean;
+  onEdit: () => void;
+  onToggleRedemptions: () => void;
+  onAction: (action: StatusAction) => void;
+}) {
+  const active = promotion.isPubliclyAvailable || promotion.active;
+
+  return (
+    <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#101821] dark:shadow-none">
+      <div className="grid lg:grid-cols-[240px_1fr]">
+        <div className="relative min-h-44 overflow-hidden bg-slate-100 dark:bg-slate-900/60">
+          {promotion.coverUrl ? (
+            <img
+              src={promotion.coverUrl}
+              alt={`Portada de ${promotion.title}`}
+              className="h-full min-h-44 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full min-h-44 flex-col items-center justify-center p-6 text-center text-slate-400">
+              <Megaphone className="h-8 w-8" />
+              <p className="mt-2 text-xs font-medium">Sin portada</p>
+            </div>
+          )}
+          {promotion.discountPercent !== null ? (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-neutral-950/85 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+              <Percent className="h-3.5 w-3.5" />
+              {promotion.discountPercent}% dscto.
+            </span>
+          ) : null}
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge
+                  label={promotion.statusName ?? promotion.status}
+                  tone={statusTone(promotion.status, promotion.isPubliclyAvailable)}
+                />
+                {promotion.isPubliclyAvailable ? (
+                  <StatusBadge label="Visible para clientes" tone="success" />
+                ) : null}
+              </div>
+              <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950 dark:text-white">
+                {promotion.title}
+              </h3>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                <Building2 className="h-4 w-4" />
+                {promotion.branchName}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="secondary" onClick={onEdit}>
+                <Pencil className="mr-1.5 h-4 w-4" />
+                Editar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onToggleRedemptions}
+                disabled={redemptionsLoading}
+              >
+                <Users className="mr-1.5 h-4 w-4" />
+                {redemptionsLoading
+                  ? "Cargando..."
+                  : redemptions
+                    ? "Ocultar redenciones"
+                    : "Ver redenciones"}
+              </Button>
+              {active ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onAction("pause")}
+                >
+                  <PauseCircle className="mr-1.5 h-4 w-4" />
+                  Pausar
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={!gate.canCreatePromotions}
+                  onClick={() => onAction("activate")}
+                >
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  Activar
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="danger"
+                onClick={() => onAction("delete")}
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Archivar
+              </Button>
+            </div>
+          </div>
+
+          {promotion.description ? (
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+              {promotion.description}
+            </p>
+          ) : null}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric
+              label="Vigencia"
+              value={`${formatDate(promotion.startDate)} – ${formatDate(promotion.endDate)}`}
+              icon={<CalendarDays className="h-4 w-4" />}
+            />
+            <Metric
+              label="Redenciones"
+              value={`${promotion.redemptionsTotal}/${promotion.maxRedemptions ?? "∞"}`}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <Metric
+              label="Emitidas"
+              value={String(promotion.issuedCount)}
+              icon={<Sparkles className="h-4 w-4" />}
+            />
+            <Metric
+              label="Por usuario"
+              value={String(promotion.maxRedemptionsPerUser)}
+              icon={<ShieldCheck className="h-4 w-4" />}
+            />
+          </div>
+
+          {redemptions ? <RedemptionsList items={redemptions} /> : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ToggleCard({
+  checked,
+  onChange,
+  title,
+  description,
+  icon: Icon,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description: string;
+  icon: typeof Users;
+  disabled: boolean;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-sky-300 dark:border-slate-700 dark:hover:border-sky-700",
+        checked && "border-sky-300 bg-sky-50/70 dark:border-sky-800 dark:bg-sky-950/20",
+        disabled && "cursor-not-allowed opacity-60",
+      )}
+    >
+      <input
+        type="checkbox"
+        className="mt-1 h-4 w-4 rounded border-slate-300 accent-sky-600 dark:border-slate-600 dark:bg-slate-900"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        disabled={disabled}
+      />
+      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+      <span>
+        <span className="block text-sm font-semibold text-slate-950 dark:text-white">
+          {title}
+        </span>
+        <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
+          {description}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900/50">
+      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-1.5 text-sm font-semibold text-slate-950 dark:text-slate-100">
+        {value}
+      </p>
     </div>
   );
 }
 
-function statusTone(status: string, visible: boolean): "default" | "success" | "warning" | "danger" | "info" {
+function RedemptionsList({ items }: { items: PromotionRedemptionItem[] }) {
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
+            Redenciones e interesados
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Historial de códigos emitidos y canjes confirmados.
+          </p>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
+          {items.length}
+        </span>
+      </div>
+
+      {items.length ? (
+        <div className="mt-3 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-[#101821]">
+          {items.map((item) => (
+            <div
+              key={item.redemptionId}
+              className="flex flex-col gap-2 px-3 py-3 text-sm md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <p className="font-medium text-slate-950 dark:text-slate-100">
+                  {item.userName || item.userEmail || "Usuario"}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Código {item.redemptionCode || "—"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge
+                  label={item.statusName ?? item.status}
+                  tone={
+                    item.status === "redeemed"
+                      ? "success"
+                      : item.status === "issued"
+                        ? "warning"
+                        : "default"
+                  }
+                />
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {formatDate(item.redeemedAt ?? item.issuedAt)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          Aún no hay redenciones registradas.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Feedback({
+  tone,
+  message,
+}: {
+  tone: "success" | "error";
+  message: string;
+}) {
+  return (
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={cn(
+        "rounded-2xl border px-4 py-3 text-sm",
+        tone === "success"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+          : "border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+      )}
+    >
+      {message}
+    </div>
+  );
+}
+
+function statusTone(
+  status: string,
+  visible: boolean,
+): "default" | "success" | "warning" | "danger" | "info" {
   const value = status.toLowerCase();
   if (visible || value === "approved") return "success";
   if (["draft", "pending_review", "paused"].includes(value)) return "warning";
@@ -343,29 +1213,39 @@ function statusTone(status: string, visible: boolean): "default" | "success" | "
   return "default";
 }
 
+function confirmationCopy(action: PendingAction | null) {
+  if (!action) {
+    return { title: "Confirmar acción", description: "", confirmLabel: "Confirmar" };
+  }
 
-function RedemptionsList({ items }: { items: PromotionRedemptionItem[] }) {
-  return (
-    <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
-      <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">Usuarios interesados / redenciones</p>
-      {items.length ? (
-        <div className="mt-3 space-y-2">
-          {items.map((item) => (
-            <div key={item.redemptionId} className="flex flex-col gap-1 rounded-xl bg-white dark:bg-[#101821] px-3 py-2 text-sm md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="font-medium text-slate-950 dark:text-slate-100">{item.userName || item.userEmail || "Usuario"}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Código {item.redemptionCode || "—"}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <StatusBadge label={item.statusName ?? item.status} tone={item.status === "redeemed" ? "success" : item.status === "issued" ? "warning" : "default"} />
-                <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(item.redeemedAt ?? item.issuedAt)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aún no hay usuarios interesados o redenciones registradas.</p>
-      )}
-    </div>
-  );
+  if (action.action === "activate") {
+    return {
+      title: "¿Activar esta promoción?",
+      description: `“${action.promotion.title}” podrá quedar visible para clientes si cumple las reglas de publicación.`,
+      confirmLabel: "Activar promoción",
+    };
+  }
+
+  if (action.action === "pause") {
+    return {
+      title: "¿Pausar esta promoción?",
+      description: `“${action.promotion.title}” dejará de estar visible, pero conservará sus datos y redenciones.`,
+      confirmLabel: "Pausar promoción",
+    };
+  }
+
+  return {
+    title: "¿Archivar esta promoción?",
+    description: `“${action.promotion.title}” se retirará de la operación activa. Esta acción no elimina su historial.`,
+    confirmLabel: "Archivar promoción",
+  };
+}
+
+function toDateInput(value: string | null) {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
+function getErrorMessage(caught: unknown, fallback: string) {
+  return caught instanceof Error ? caught.message : fallback;
 }

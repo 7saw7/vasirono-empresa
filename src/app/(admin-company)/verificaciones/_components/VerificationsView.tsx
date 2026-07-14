@@ -21,7 +21,7 @@ export function VerificationsView({
       />
 
       <VerificationStatusCard summary={data.summary} />
-      <VerificationActionsCard request={data.request} />
+      <VerificationActionsCard request={data.request} documents={data.documents} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <VerificationChecksTable items={data.checks} />
