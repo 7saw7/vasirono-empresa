@@ -232,7 +232,7 @@ function normalizeReviewResponse(
   fallbackReviewId: number
 ): ReviewResponse {
   return {
-    id: toNumber(pick(row, "id", "responseId", "response_id")),
+    id: toNumber(pick(row, "responseId", "response_id", "id")),
     reviewId: toNumber(pick(row, "reviewId", "review_id"), fallbackReviewId),
     companyId: toNumber(pick(row, "companyId", "company_id")),
     responderName: toStringValue(
