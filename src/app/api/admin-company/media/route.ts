@@ -23,6 +23,12 @@ export async function POST(request: NextRequest) {
     const mediaTypeId = Number(formData.get("mediaTypeId") || 0);
 
     if (!(file instanceof File)) throw new AppError("VALIDATION_ERROR", "Archivo requerido.", 422);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      throw new AppError("VALIDATION_ERROR", "Solo se admiten imágenes JPG, PNG o WEBP.", 422);
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      throw new AppError("VALIDATION_ERROR", "La imagen supera el límite de 8 MB.", 413);
+    }
     if (ownerType !== "company" && ownerType !== "branch") throw new AppError("VALIDATION_ERROR", "Tipo de propietario inválido.", 422);
     if (!Number.isInteger(ownerId) || ownerId <= 0) throw new AppError("VALIDATION_ERROR", "ownerId inválido.", 422);
     if (!Number.isInteger(mediaTypeId) || mediaTypeId <= 0) throw new AppError("VALIDATION_ERROR", "Tipo de media inválido.", 422);

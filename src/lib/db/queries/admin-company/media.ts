@@ -2,34 +2,47 @@ import { AppError } from "@/lib/errors/app-error";
 import { serviceRequest, buildServiceUrl } from "@/lib/http/service-client";
 import { asRecord, pick, toBoolean, toNullableNumber, toNumber, toStringValue, unwrapList, type AnyRecord } from "@/lib/http/service-data";
 import { getRawSessionToken, getSession } from "@/lib/auth/session";
-import { listBranchesQuery } from "@/lib/db/queries/admin-company/branches";
-import { getCurrentPlanQuery } from "@/lib/db/queries/admin-company/billing";
 import type { GalleryMediaItem, GalleryOverview, MediaOwnerType, MediaTypeOption } from "@/features/admin-company/media/types";
 
 export async function getGalleryOverviewQuery(companyId: number): Promise<GalleryOverview> {
-  const [mediaTypes, branches, companyMedia, plan] = await Promise.all([
-    listMediaTypesQuery(companyId),
-    listBranchesQuery(companyId).catch(() => []),
-    listCompanyMediaQuery(companyId).catch(() => []),
-    getCurrentPlanQuery(companyId).catch(() => null),
-  ]);
+  const payload = await serviceRequest<unknown>({
+    service: "media",
+    companyId,
+    directPath: `/api/media/business/companies/${companyId}/gallery`,
+    gatewayPath: `/api/media/api/media/business/companies/${companyId}/gallery`,
+    errorCode: "GALLERY_OVERVIEW_ERROR",
+    errorMessage: "No se pudo cargar la galería ni validar el límite del plan.",
+  });
 
-  const branchMediaGroups = await Promise.all(
-    branches.map(async (branch) => ({
-      branch,
-      media: await listBranchMediaQuery(companyId, branch.branchId, branch.name).catch(() => []),
-    })),
-  );
-
-  const branchMedia = branchMediaGroups.flatMap((group) => group.media);
+  const root = asRecord(payload);
+  const usage = asRecord(pick(root, "usage"));
+  const branches = unwrapList(root, "branches").map((row) => ({
+    branchId: toNumber(pick(row, "branchId", "branch_id")),
+    name: toStringValue(pick(row, "name"), "Sucursal"),
+  }));
+  const branchNameById = new Map(branches.map((branch) => [branch.branchId, branch.name]));
 
   return {
-    mediaTypes,
-    companyMedia,
-    branchMedia,
-    branches: branches.map((branch) => ({ branchId: branch.branchId, name: branch.name })),
-    planLimit: plan?.limits.media ?? null,
-    usedMedia: companyMedia.length + branchMedia.length,
+    mediaTypes: unwrapList(root, "mediaTypes", "media_types").map((row) => ({
+      id: toNumber(pick(row, "id", "mediaTypeId", "media_type_id")),
+      name: toStringValue(pick(row, "name", "code"), "gallery"),
+      isUnique: toBoolean(pick(row, "isUnique", "is_unique"), false),
+    })),
+    companyMedia: unwrapList(root, "companyMedia", "company_media").map((row) =>
+      normalizeMedia(row, "company", companyId, "Negocio"),
+    ),
+    branchMedia: unwrapList(root, "branchMedia", "branch_media").map((row) => {
+      const ownerId = toNumber(pick(row, "ownerId", "owner_id", "branchId", "branch_id"));
+      return normalizeMedia(
+        row,
+        "branch",
+        ownerId,
+        toStringValue(pick(row, "ownerLabel", "owner_label"), branchNameById.get(ownerId) ?? "Sucursal"),
+      );
+    }),
+    branches,
+    planLimit: toNullableNumber(pick(usage, "limit")),
+    usedMedia: toNumber(pick(usage, "used"), 0),
   };
 }
 
@@ -224,6 +237,22 @@ export async function reorderBranchMediaQuery(
     body: { items },
     errorCode: "MEDIA_REORDER_ERROR",
     errorMessage: "No se pudo ordenar las imágenes.",
+  });
+}
+
+export async function reorderCompanyMediaQuery(
+  companyId: number,
+  items: Array<{ mediaId: number; sortOrder: number }>,
+): Promise<unknown> {
+  return serviceRequest<unknown, { items: Array<{ mediaId: number; sortOrder: number }> }>({
+    service: "media",
+    companyId,
+    directPath: `/api/media/companies/${companyId}/reorder`,
+    gatewayPath: `/api/media/api/media/companies/${companyId}/reorder`,
+    method: "PATCH",
+    body: { items },
+    errorCode: "MEDIA_REORDER_ERROR",
+    errorMessage: "No se pudo ordenar las imágenes del negocio.",
   });
 }
 
