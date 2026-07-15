@@ -1,9 +1,44 @@
 import { serviceRequest } from "@/lib/http/service-client";
-import { pick, toBoolean, toNumber, toStringValue, unwrapList, type AnyRecord } from "@/lib/http/service-data";
+import {
+  pick,
+  toBoolean,
+  toNumber,
+  toStringValue,
+  unwrapList,
+  type AnyRecord,
+} from "@/lib/http/service-data";
 import { getCurrentPlanQuery } from "@/lib/db/queries/admin-company/billing";
-import type { CompanyRoleOption, TeamMember, TeamOverview } from "@/features/admin-company/team/types";
+import type { AddTeamMemberInput } from "@/features/admin-company/team/schema";
+import type {
+  CompanyRoleOption,
+  TeamMember,
+  TeamOverview,
+} from "@/features/admin-company/team/types";
 
-export async function getTeamOverviewQuery(companyId: number): Promise<TeamOverview> {
+type TeamOverviewContext = {
+  currentUserId: string;
+  canManageTeam: boolean;
+};
+
+const OWNER_ROLE_PREFERENCE = [
+  "company_owner",
+  "business_owner",
+  "admin_company",
+];
+const MANAGER_ROLE_PREFERENCE = [
+  "company_manager",
+  "business_manager",
+  "business_admin",
+];
+const ASSIGNABLE_COMPANY_ROLES = new Set([
+  ...OWNER_ROLE_PREFERENCE,
+  ...MANAGER_ROLE_PREFERENCE,
+]);
+
+export async function getTeamOverviewQuery(
+  companyId: number,
+  context: TeamOverviewContext,
+): Promise<TeamOverview> {
   const [members, roles, plan] = await Promise.all([
     listTeamMembersQuery(companyId),
     listCompanyRolesQuery(companyId),
@@ -14,12 +49,17 @@ export async function getTeamOverviewQuery(companyId: number): Promise<TeamOverv
     members,
     roles,
     teamLimit: plan?.limits.teamMembers ?? null,
-    teamManagementEnabled: Boolean(plan?.features.teamManagement ?? members.length <= 1),
-    planLabel: plan?.planName ?? plan?.plan.toUpperCase() ?? "FREE",
+    teamManagementEnabled: plan?.features.teamManagement ?? false,
+    planLabel: plan?.planName ?? plan?.plan.toUpperCase() ?? "No disponible",
+    planAvailable: plan !== null,
+    currentUserId: context.currentUserId,
+    canManageTeam: context.canManageTeam,
   };
 }
 
-export async function listTeamMembersQuery(companyId: number): Promise<TeamMember[]> {
+export async function listTeamMembersQuery(
+  companyId: number,
+): Promise<TeamMember[]> {
   const payload = await serviceRequest<unknown>({
     service: "users",
     companyId,
@@ -29,10 +69,14 @@ export async function listTeamMembersQuery(companyId: number): Promise<TeamMembe
     errorMessage: "No se pudo cargar el equipo.",
   });
 
-  return unwrapList(payload, "items", "data", "members", "users").map(normalizeMember);
+  return unwrapList(payload, "items", "data", "members", "users").map(
+    normalizeMember,
+  );
 }
 
-export async function listCompanyRolesQuery(companyId: number): Promise<CompanyRoleOption[]> {
+export async function listCompanyRolesQuery(
+  companyId: number,
+): Promise<CompanyRoleOption[]> {
   const payload = await serviceRequest<unknown>({
     service: "users",
     companyId,
@@ -42,15 +86,18 @@ export async function listCompanyRolesQuery(companyId: number): Promise<CompanyR
     errorMessage: "No se pudo cargar los roles del equipo.",
   });
 
-  return unwrapList(payload, "items", "data", "roles").map((row) => ({
-    roleId: toNumber(pick(row, "roleId", "role_id", "id")),
-    name: toStringValue(pick(row, "name"), "role"),
-    label: humanRoleLabel(toStringValue(pick(row, "label", "name"), "Rol")),
-  }));
+  const roles = unwrapList(payload, "items", "data", "roles")
+    .map(normalizeRoleOption)
+    .filter((role) => ASSIGNABLE_COMPANY_ROLES.has(role.name));
+
+  return deduplicateSemanticRoles(roles);
 }
 
-export async function addTeamMemberQuery(companyId: number, input: { userEmail?: string; userId?: string; roleId: number }) {
-  return serviceRequest<unknown, typeof input>({
+export async function addTeamMemberQuery(
+  companyId: number,
+  input: AddTeamMemberInput,
+) {
+  return serviceRequest<unknown, AddTeamMemberInput>({
     service: "users",
     companyId,
     directPath: `/api/business/companies/${companyId}/users`,
@@ -62,7 +109,11 @@ export async function addTeamMemberQuery(companyId: number, input: { userEmail?:
   });
 }
 
-export async function updateTeamMemberRoleQuery(companyId: number, userId: string, roleId: number) {
+export async function updateTeamMemberRoleQuery(
+  companyId: number,
+  userId: string,
+  roleId: number,
+) {
   return serviceRequest<unknown, { roleId: number }>({
     service: "users",
     companyId,
@@ -75,7 +126,11 @@ export async function updateTeamMemberRoleQuery(companyId: number, userId: strin
   });
 }
 
-export async function setTeamMemberActiveQuery(companyId: number, userId: string, active: boolean) {
+export async function setTeamMemberActiveQuery(
+  companyId: number,
+  userId: string,
+  active: boolean,
+) {
   return serviceRequest<unknown, { active: boolean }>({
     service: "users",
     companyId,
@@ -93,26 +148,70 @@ function normalizeMember(row: AnyRecord): TeamMember {
     membershipId: toNumber(pick(row, "membershipId", "membership_id", "id")),
     companyId: toNumber(pick(row, "companyId", "company_id")),
     userId: toStringValue(pick(row, "userId", "user_id")),
-    userName: toStringValue(pick(row, "userName", "user_name", "name"), "Usuario"),
+    userName: toStringValue(
+      pick(row, "userName", "user_name", "name"),
+      "Usuario",
+    ),
     userEmail: toStringValue(pick(row, "userEmail", "user_email", "email"), ""),
-    userPhone: pick(row, "userPhone", "user_phone") == null ? null : String(pick(row, "userPhone", "user_phone")),
+    userPhone:
+      pick(row, "userPhone", "user_phone") == null
+        ? null
+        : String(pick(row, "userPhone", "user_phone")),
     roleId: toNumber(pick(row, "roleId", "role_id")),
     roleName: toStringValue(pick(row, "roleName", "role_name"), "role"),
     isActive: toBoolean(pick(row, "isActive", "is_active"), true),
-    createdAt: pick(row, "createdAt", "created_at") == null ? null : String(pick(row, "createdAt", "created_at")),
-    updatedAt: pick(row, "updatedAt", "updated_at") == null ? null : String(pick(row, "updatedAt", "updated_at")),
+    createdAt:
+      pick(row, "createdAt", "created_at") == null
+        ? null
+        : String(pick(row, "createdAt", "created_at")),
+    updatedAt:
+      pick(row, "updatedAt", "updated_at") == null
+        ? null
+        : String(pick(row, "updatedAt", "updated_at")),
   };
+}
+
+function normalizeRoleOption(row: AnyRecord): CompanyRoleOption {
+  const name = toStringValue(pick(row, "name"), "role").trim().toLowerCase();
+
+  return {
+    roleId: toNumber(pick(row, "roleId", "role_id", "id")),
+    name,
+    label: humanRoleLabel(name),
+  };
+}
+
+function deduplicateSemanticRoles(
+  roles: CompanyRoleOption[],
+): CompanyRoleOption[] {
+  const owner = pickPreferredRole(roles, OWNER_ROLE_PREFERENCE);
+  const manager = pickPreferredRole(roles, MANAGER_ROLE_PREFERENCE);
+  return [owner, manager].filter((role): role is CompanyRoleOption =>
+    Boolean(role),
+  );
+}
+
+function pickPreferredRole(
+  roles: CompanyRoleOption[],
+  preference: string[],
+): CompanyRoleOption | undefined {
+  for (const name of preference) {
+    const match = roles.find((role) => role.name === name);
+    if (match) return match;
+  }
+
+  return undefined;
 }
 
 function humanRoleLabel(value: string): string {
   const map: Record<string, string> = {
     company_owner: "Propietario",
     business_owner: "Propietario",
-    admin_company: "Administrador empresa",
-    company_manager: "Manager empresa",
-    business_admin: "Administrador empresa",
-    branch_manager: "Encargado de sucursal",
-    branch_staff: "Staff de sucursal",
+    admin_company: "Propietario",
+    company_manager: "Manager de empresa",
+    business_manager: "Manager de empresa",
+    business_admin: "Manager de empresa",
   };
+
   return map[value] ?? value.replaceAll("_", " ");
 }

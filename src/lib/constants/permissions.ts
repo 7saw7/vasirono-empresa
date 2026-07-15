@@ -11,11 +11,11 @@ export const ADMIN_COMPANY_PERMISSIONS = [
   "manageBilling",
   "managePromotions",
   "manageMedia",
+  "viewTeam",
   "manageTeam",
 ] as const;
 
-export type AdminCompanyPermission =
-  (typeof ADMIN_COMPANY_PERMISSIONS)[number];
+export type AdminCompanyPermission = (typeof ADMIN_COMPANY_PERMISSIONS)[number];
 
 const FULL_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
   "viewDashboard",
@@ -28,6 +28,7 @@ const FULL_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
   "manageBilling",
   "managePromotions",
   "manageMedia",
+  "viewTeam",
   "manageTeam",
 ];
 
@@ -44,7 +45,9 @@ const ROLE_PERMISSION_MAP: Record<AppRole, AdminCompanyPermission[]> = {
   [ROLES.analyst]: ["viewDashboard", "viewAnalytics"],
   [ROLES.support]: READ_ONLY_ADMIN_COMPANY_PERMISSIONS,
   [ROLES.companyOwner]: FULL_ADMIN_COMPANY_PERMISSIONS,
-  [ROLES.companyManager]: FULL_ADMIN_COMPANY_PERMISSIONS,
+  [ROLES.companyManager]: FULL_ADMIN_COMPANY_PERMISSIONS.filter(
+    (permission) => permission !== "manageTeam",
+  ),
   [ROLES.user]: [],
 
   // Roles legacy del panel anterior.
@@ -54,7 +57,7 @@ const ROLE_PERMISSION_MAP: Record<AppRole, AdminCompanyPermission[]> = {
 
 export function hasPermission(
   role: AppRole,
-  permission: AdminCompanyPermission
+  permission: AdminCompanyPermission,
 ): boolean {
   return ROLE_PERMISSION_MAP[role]?.includes(permission) ?? false;
 }

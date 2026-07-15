@@ -24,4 +24,7 @@ export type TeamOverview = {
   teamLimit: number | null;
   teamManagementEnabled: boolean;
   planLabel: string;
+  planAvailable: boolean;
+  currentUserId: string;
+  canManageTeam: boolean;
 };
