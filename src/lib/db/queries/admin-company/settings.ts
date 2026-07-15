@@ -1,46 +1,53 @@
-import { serviceRequestOptional } from "@/lib/http/service-client";
 import {
-  asRecord,
-  pick,
-  toBoolean,
-  toNumber,
-  toStringValue,
-} from "@/lib/http/service-data";
+  serviceRequest,
+  serviceRequestOptionalResult,
+} from "@/lib/http/service-client";
+import { asRecord, pick, toBoolean, toNumber, toStringValue } from "@/lib/http/service-data";
 import type {
+  ChangePasswordInput,
   CompanySettings,
   NotificationPreferences,
   SecuritySettings,
   UpdateNotificationPreferencesInput,
 } from "@/features/admin-company/settings/types";
 
-const DEFAULT_NOTIFICATIONS: NotificationPreferences = {
-  emailNotifications: true,
+const DEFAULT_NOTIFICATIONS: Omit<NotificationPreferences, "available"> = {
+  notificationsEnabled: true,
   reviewAlerts: true,
   verificationAlerts: true,
-  weeklySummary: true,
 };
 
 export async function getCompanySettingsQuery(
   companyId: number
 ): Promise<CompanySettings> {
-  const [notificationsPayload, authPayload] = await Promise.all([
-    serviceRequestOptional<unknown>({
+  const [notificationsResult, authResult] = await Promise.all([
+    serviceRequestOptionalResult<unknown>({
       service: "notifications",
       companyId,
       directPath: "/api/app/notification-preferences",
       gatewayPath: "/api/notifications/api/app/notification-preferences",
     }),
-    serviceRequestOptional<unknown>({
+    serviceRequestOptionalResult<unknown>({
       service: "auth",
-      directPath: "/api/auth/me/security",
-      gatewayPath: "/api/auth/me/security",
+      directPath: "/api/auth/account/security",
+      gatewayPath: "/api/auth/account/security",
+      headers: {
+        "x-auth-portal": "company",
+        "x-company-id": String(companyId),
+      },
     }),
   ]);
 
   return {
     companyId,
-    notifications: normalizeNotificationPreferences(notificationsPayload),
-    security: normalizeSecuritySettings(authPayload),
+    notifications: normalizeNotificationPreferences(
+      notificationsResult.data,
+      notificationsResult.status === "available"
+    ),
+    security: normalizeSecuritySettings(
+      authResult.data,
+      authResult.status === "available"
+    ),
   };
 }
 
@@ -48,135 +55,143 @@ export async function updateNotificationPreferencesQuery(
   companyId: number,
   input: UpdateNotificationPreferencesInput
 ): Promise<CompanySettings> {
-  const current = await serviceRequestOptional<unknown>({
+  const notifications = await serviceRequest<unknown, unknown>({
     service: "notifications",
     companyId,
     directPath: "/api/app/notification-preferences",
     gatewayPath: "/api/notifications/api/app/notification-preferences",
+    method: "PATCH",
+    body: {
+      notificationsEnabled: input.notificationsEnabled,
+      events: {
+        review: input.reviewAlerts,
+        verification: input.verificationAlerts,
+      },
+    },
+    errorCode: "NOTIFICATION_PREFERENCES_UPDATE_FAILED",
+    errorMessage: "No se pudieron guardar las preferencias de notificación.",
   });
 
-  const body = buildNotificationPreferencesPatch(input, current);
-
-  const notifications =
-    (await serviceRequestOptional<unknown, typeof body>({
-      service: "notifications",
-      companyId,
-      directPath: "/api/app/notification-preferences",
-      gatewayPath: "/api/notifications/api/app/notification-preferences",
-      method: "PATCH",
-      body,
-    })) ?? body;
+  const authResult = await serviceRequestOptionalResult<unknown>({
+    service: "auth",
+    directPath: "/api/auth/account/security",
+    gatewayPath: "/api/auth/account/security",
+    headers: {
+      "x-auth-portal": "company",
+      "x-company-id": String(companyId),
+    },
+  });
 
   return {
     companyId,
-    notifications: normalizeNotificationPreferences(notifications),
-    security: normalizeSecuritySettings(null),
+    notifications: normalizeNotificationPreferences(notifications, true),
+    security: normalizeSecuritySettings(
+      authResult.data,
+      authResult.status === "available"
+    ),
   };
 }
 
-function normalizeNotificationPreferences(value: unknown): NotificationPreferences {
-  const row = asRecord(value);
+export async function changePasswordQuery(
+  companyId: number,
+  input: ChangePasswordInput
+): Promise<{ changed: boolean; revokedSessions: boolean }> {
+  return serviceRequest<
+    { changed: boolean; revokedSessions: boolean },
+    { currentPassword: string; newPassword: string }
+  >({
+    service: "auth",
+    directPath: "/api/auth/session/change-password",
+    gatewayPath: "/api/auth/session/change-password",
+    method: "POST",
+    headers: {
+      "x-auth-portal": "company",
+      "x-company-id": String(companyId),
+    },
+    body: {
+      currentPassword: input.currentPassword,
+      newPassword: input.newPassword,
+    },
+    errorCode: "PASSWORD_CHANGE_FAILED",
+    errorMessage: "No se pudo cambiar la contraseña.",
+  });
+}
 
-  if (!Object.keys(row).length) return DEFAULT_NOTIFICATIONS;
+function normalizeNotificationPreferences(
+  value: unknown,
+  available: boolean
+): NotificationPreferences {
+  const row = asRecord(value);
+  const events = asRecord(pick(row, "events"));
 
   return {
-    emailNotifications: toBoolean(
-      pick(row, "emailNotifications", "email_notifications", "notificationsEnabled", "notifications_enabled"),
-      DEFAULT_NOTIFICATIONS.emailNotifications
+    available,
+    notificationsEnabled: toBoolean(
+      pick(row, "notificationsEnabled", "notifications_enabled"),
+      DEFAULT_NOTIFICATIONS.notificationsEnabled
     ),
-    reviewAlerts: readNotificationDetail(row, ["review", "reseña", "resenia"], DEFAULT_NOTIFICATIONS.reviewAlerts),
-    verificationAlerts: readNotificationDetail(row, ["verification", "verificación", "verificacion"], DEFAULT_NOTIFICATIONS.verificationAlerts),
-    weeklySummary: readNotificationDetail(row, ["weekly", "summary", "resumen"], DEFAULT_NOTIFICATIONS.weeklySummary),
+    reviewAlerts: toBoolean(
+      pick(events, "review"),
+      readLegacyNotificationDetail(row, "review", DEFAULT_NOTIFICATIONS.reviewAlerts)
+    ),
+    verificationAlerts: toBoolean(
+      pick(events, "verification"),
+      readLegacyNotificationDetail(
+        row,
+        "verification",
+        DEFAULT_NOTIFICATIONS.verificationAlerts
+      )
+    ),
   };
 }
 
-function readNotificationDetail(
+function readLegacyNotificationDetail(
   row: Record<string, unknown>,
-  keywords: string[],
+  code: string,
   fallback: boolean
 ): boolean {
-  const directValue = pick(
-    row,
-    keywords.includes("review") ? "reviewAlerts" : "__none__",
-    keywords.includes("verification") ? "verificationAlerts" : "__none__",
-    keywords.includes("weekly") ? "weeklySummary" : "__none__"
-  );
-
-  if (directValue !== undefined) return toBoolean(directValue, fallback);
-
   const details = Array.isArray(row.details) ? row.details : [];
   const match = details.find((item) => {
     const detail = asRecord(item);
     const name = toStringValue(
       pick(detail, "notificationTypeName", "notification_type_name", "name", "code"),
       ""
-    ).toLowerCase();
+    )
+      .trim()
+      .toLowerCase();
 
-    return keywords.some((keyword) => name.includes(keyword));
+    return name === code;
   });
 
-  if (!match) return fallback;
-
-  return toBoolean(pick(asRecord(match), "enabled"), fallback);
+  return match
+    ? toBoolean(pick(asRecord(match), "enabled"), fallback)
+    : fallback;
 }
 
-function buildNotificationPreferencesPatch(
-  input: UpdateNotificationPreferencesInput,
-  current: unknown
-) {
-  const currentRow = asRecord(current);
-  const details = Array.isArray(currentRow.details) ? currentRow.details : [];
-  const mappedDetails = [
-    mapNotificationDetailPatch(details, ["review", "reseña", "resenia"], input.reviewAlerts),
-    mapNotificationDetailPatch(details, ["verification", "verificación", "verificacion"], input.verificationAlerts),
-    mapNotificationDetailPatch(details, ["weekly", "summary", "resumen"], input.weeklySummary),
-  ].filter((item): item is { notificationTypeId: number; enabled: boolean } => Boolean(item));
-
-  return {
-    notificationsEnabled: input.emailNotifications,
-    ...(mappedDetails.length ? { details: mappedDetails } : {}),
-  };
-}
-
-function mapNotificationDetailPatch(
-  details: unknown[],
-  keywords: string[],
-  enabled: boolean
-): { notificationTypeId: number; enabled: boolean } | null {
-  const match = details.find((item) => {
-    const detail = asRecord(item);
-    const name = toStringValue(
-      pick(detail, "notificationTypeName", "notification_type_name", "name", "code"),
-      ""
-    ).toLowerCase();
-
-    return keywords.some((keyword) => name.includes(keyword));
-  });
-
-  if (!match) return null;
-
-  const notificationTypeId = toNumber(
-    pick(asRecord(match), "notificationTypeId", "notification_type_id")
-  );
-
-  if (!notificationTypeId) return null;
-
-  return { notificationTypeId, enabled };
-}
-
-function normalizeSecuritySettings(value: unknown): SecuritySettings {
+function normalizeSecuritySettings(
+  value: unknown,
+  available: boolean
+): SecuritySettings {
   const row = asRecord(value);
+  const twoFactor = asRecord(pick(row, "twoFactor", "two_factor"));
 
   return {
+    available,
     lastPasswordChangeAt:
       toStringValue(
         pick(row, "lastPasswordChangeAt", "last_password_change_at"),
         ""
       ) || null,
-    twoFactorEnabled: toBoolean(pick(row, "twoFactorEnabled", "two_factor_enabled"), false),
-    activeSessionsCount: toNumber(
-      pick(row, "activeSessionsCount", "active_sessions_count"),
-      1
+    twoFactorAvailable: toBoolean(
+      pick(twoFactor, "available", "isAvailable"),
+      false
     ),
+    twoFactorEnabled: toBoolean(
+      pick(twoFactor, "enabled", "isEnabled"),
+      false
+    ),
+    activeSessionsCount: available
+      ? toNumber(pick(row, "activeSessionsCount", "active_sessions_count"), 0)
+      : null,
   };
 }
