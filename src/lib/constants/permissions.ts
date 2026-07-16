@@ -11,6 +11,7 @@ export const ADMIN_COMPANY_PERMISSIONS = [
   "requestVerification",
   "submitVerification",
   "manageBilling",
+  "changeBillingPlan",
   "managePromotions",
   "manageMedia",
   "viewTeam",
@@ -30,6 +31,7 @@ const FULL_ADMIN_COMPANY_PERMISSIONS: AdminCompanyPermission[] = [
   "requestVerification",
   "submitVerification",
   "manageBilling",
+  "changeBillingPlan",
   "managePromotions",
   "manageMedia",
   "viewTeam",
@@ -50,7 +52,8 @@ const ROLE_PERMISSION_MAP: Record<AppRole, AdminCompanyPermission[]> = {
   [ROLES.support]: READ_ONLY_ADMIN_COMPANY_PERMISSIONS,
   [ROLES.companyOwner]: FULL_ADMIN_COMPANY_PERMISSIONS,
   [ROLES.companyManager]: FULL_ADMIN_COMPANY_PERMISSIONS.filter(
-    (permission) => permission !== "manageTeam",
+    (permission) =>
+      !["manageTeam", "changeBillingPlan"].includes(permission),
   ),
   [ROLES.user]: [],
 

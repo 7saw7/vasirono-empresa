@@ -1,4 +1,5 @@
 export type PlanCode = "free" | "pro" | "premium";
+export type BillingCheckoutMode = "mock" | "provider";
 
 export type PlanLimits = {
   branches: number | null;
@@ -26,6 +27,17 @@ export type UpgradeTarget = {
   benefits: string[];
 };
 
+export type BillingPlanOption = UpgradeTarget & {
+  planId: number | null;
+  price: number;
+  currency: string;
+  billingInterval: "month";
+  intervalMonths: number;
+  providerPriceId: string | null;
+  isCurrent: boolean;
+  checkoutEnabled: boolean;
+};
+
 export type CurrentPlan = {
   companyId: number;
   planId: number | null;
@@ -39,6 +51,9 @@ export type CurrentPlan = {
   features: PlanFeatures;
   benefits: string[];
   upgradeTargets: UpgradeTarget[];
+  availablePlans: BillingPlanOption[];
+  checkoutMode: BillingCheckoutMode;
+  checkoutEnabled: boolean;
   canCreatePromotion: boolean;
   promotionLimit: number | null;
 };
@@ -69,10 +84,21 @@ export type BillingOverview = {
 };
 
 export type UpgradeCheckoutInput = {
+  planCode: PlanCode;
+  idempotencyKey: string;
+};
+
+export type UpgradeCheckoutResult = {
+  mode: BillingCheckoutMode;
+  provider: string;
+  status: "approved" | "pending" | "failed" | "unchanged";
+  reference?: string | null;
+  checkoutUrl?: string | null;
+  companyId: number;
+  plan: PlanCode;
   planId: number;
-  paymentMethodId: number;
+  planName: string;
   amount: number;
-  startDate?: string;
-  endDate?: string;
-  idempotencyKey?: string;
+  currency: string;
+  message?: string;
 };

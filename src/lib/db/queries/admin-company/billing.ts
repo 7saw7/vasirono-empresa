@@ -10,7 +10,9 @@ import {
   type AnyRecord,
 } from "@/lib/http/service-data";
 import type {
+  BillingCheckoutMode,
   BillingOverview,
+  BillingPlanOption,
   CurrentPlan,
   PaymentHistoryItem,
   PlanCode,
@@ -18,6 +20,7 @@ import type {
   PlanLimits,
   SubscriptionHistoryItem,
   UpgradeCheckoutInput,
+  UpgradeCheckoutResult,
   UpgradeTarget,
 } from "@/features/admin-company/billing/types";
 
@@ -58,7 +61,7 @@ const DEFAULT_FEATURES: Record<PlanCode, PlanFeatures> = {
 };
 
 export async function getCompanyBillingQuery(
-  companyId: number
+  companyId: number,
 ): Promise<BillingOverview> {
   const [currentPlan, payments, subscriptions] = await Promise.all([
     getCurrentPlanQuery(companyId),
@@ -66,11 +69,7 @@ export async function getCompanyBillingQuery(
     listSubscriptionsQuery(companyId),
   ]);
 
-  return {
-    currentPlan,
-    payments,
-    subscriptions,
-  };
+  return { currentPlan, payments, subscriptions };
 }
 
 export async function getCurrentPlanQuery(companyId: number): Promise<CurrentPlan> {
@@ -87,7 +86,7 @@ export async function getCurrentPlanQuery(companyId: number): Promise<CurrentPla
 }
 
 export async function listPaymentsQuery(
-  companyId: number
+  companyId: number,
 ): Promise<PaymentHistoryItem[]> {
   const payload = await serviceRequestOptional<unknown>({
     service: "billing",
@@ -101,7 +100,7 @@ export async function listPaymentsQuery(
 }
 
 export async function listSubscriptionsQuery(
-  companyId: number
+  companyId: number,
 ): Promise<SubscriptionHistoryItem[]> {
   const payload = await serviceRequestOptional<unknown>({
     service: "billing",
@@ -116,9 +115,9 @@ export async function listSubscriptionsQuery(
 
 export async function createUpgradeCheckoutQuery(
   companyId: number,
-  input: UpgradeCheckoutInput
-): Promise<unknown> {
-  return serviceRequest<unknown, UpgradeCheckoutInput>({
+  input: UpgradeCheckoutInput,
+): Promise<UpgradeCheckoutResult> {
+  return serviceRequest<UpgradeCheckoutResult, UpgradeCheckoutInput>({
     service: "billing",
     companyId,
     directPath: "/api/company/billing/checkout",
@@ -126,7 +125,7 @@ export async function createUpgradeCheckoutQuery(
     method: "POST",
     body: input,
     errorCode: "BILLING_CHECKOUT_ERROR",
-    errorMessage: "No se pudo iniciar el cambio de plan.",
+    errorMessage: "No se pudo realizar el cambio de plan.",
   });
 }
 
@@ -136,6 +135,8 @@ function normalizeCurrentPlan(value: unknown, companyId: number): CurrentPlan {
   const limits = normalizeLimits(pick(row, "limits"), plan);
   const features = normalizeFeatures(pick(row, "features"), plan);
   const upgradeTargets = unwrapList(row, "upgradeTargets", "upgrade_targets").map(normalizeUpgradeTarget);
+  const availablePlans = unwrapList(row, "availablePlans", "available_plans").map(normalizePlanOption);
+  const checkoutMode = normalizeCheckoutMode(pick(row, "checkoutMode", "checkout_mode"));
 
   return {
     companyId: toNumber(pick(row, "companyId", "company_id"), companyId),
@@ -143,7 +144,10 @@ function normalizeCurrentPlan(value: unknown, companyId: number): CurrentPlan {
     planName: toStringValue(pick(row, "planName", "plan_name"), plan).trim() || plan,
     plan,
     status: toStringValue(pick(row, "status"), "active"),
-    statusLabel: toStringValue(pick(row, "statusLabel", "status_label", "subscriptionStatus", "subscription_status"), "active"),
+    statusLabel: toStringValue(
+      pick(row, "statusLabel", "status_label", "subscriptionStatus", "subscription_status"),
+      "active",
+    ),
     subscriptionStatus:
       pick(row, "subscriptionStatus", "subscription_status") === undefined
         ? null
@@ -153,8 +157,19 @@ function normalizeCurrentPlan(value: unknown, companyId: number): CurrentPlan {
     features,
     benefits: normalizeStringList(pick(row, "benefits")),
     upgradeTargets: upgradeTargets.length ? upgradeTargets : defaultUpgradeTargets(plan),
-    canCreatePromotion: toBoolean(pick(row, "canCreatePromotion", "can_create_promotion"), features.promotions),
-    promotionLimit: toNullableNumber(pick(row, "promotionLimit", "promotion_limit")) ?? limits.promotions,
+    availablePlans: availablePlans.length ? availablePlans : defaultPlanOptions(plan, checkoutMode),
+    checkoutMode,
+    checkoutEnabled: toBoolean(
+      pick(row, "checkoutEnabled", "checkout_enabled"),
+      checkoutMode === "mock",
+    ),
+    canCreatePromotion: toBoolean(
+      pick(row, "canCreatePromotion", "can_create_promotion"),
+      features.promotions,
+    ),
+    promotionLimit:
+      toNullableNumber(pick(row, "promotionLimit", "promotion_limit")) ??
+      limits.promotions,
   };
 }
 
@@ -170,12 +185,34 @@ function normalizeUpgradeTarget(row: AnyRecord): UpgradeTarget {
   };
 }
 
+function normalizePlanOption(row: AnyRecord): BillingPlanOption {
+  const base = normalizeUpgradeTarget(row);
+  return {
+    ...base,
+    planId: toNullableNumber(pick(row, "planId", "plan_id")),
+    price: toNumber(pick(row, "price"), 0),
+    currency: toStringValue(pick(row, "currency"), "PEN"),
+    billingInterval: "month",
+    intervalMonths: toNumber(pick(row, "intervalMonths", "interval_months"), 1),
+    providerPriceId:
+      pick(row, "providerPriceId", "provider_price_id") === undefined ||
+      pick(row, "providerPriceId", "provider_price_id") === null
+        ? null
+        : String(pick(row, "providerPriceId", "provider_price_id")),
+    isCurrent: toBoolean(pick(row, "isCurrent", "is_current"), false),
+    checkoutEnabled: toBoolean(pick(row, "checkoutEnabled", "checkout_enabled"), false),
+  };
+}
+
 function normalizePayment(row: AnyRecord): PaymentHistoryItem {
   return {
     id: toNumber(pick(row, "id", "paymentId", "payment_id")),
     amount: toNumber(pick(row, "amount")),
     paymentMethodName: toStringValue(pick(row, "paymentMethodName", "payment_method_name"), "—"),
-    statusName: pick(row, "statusName", "status_name") === undefined ? null : String(pick(row, "statusName", "status_name")),
+    statusName:
+      pick(row, "statusName", "status_name") === undefined
+        ? null
+        : String(pick(row, "statusName", "status_name")),
     statusKind: toStringValue(pick(row, "statusKind", "status_kind"), "unknown"),
     createdAt: toStringValue(pick(row, "createdAt", "created_at"), ""),
   };
@@ -185,10 +222,19 @@ function normalizeSubscription(row: AnyRecord): SubscriptionHistoryItem {
   return {
     id: toNumber(pick(row, "id", "subscriptionId", "subscription_id")),
     planName: toStringValue(pick(row, "planName", "plan_name"), "—"),
-    statusName: pick(row, "statusName", "status_name") === undefined ? null : String(pick(row, "statusName", "status_name")),
+    statusName:
+      pick(row, "statusName", "status_name") === undefined
+        ? null
+        : String(pick(row, "statusName", "status_name")),
     statusKind: toStringValue(pick(row, "statusKind", "status_kind"), "unknown"),
-    startDate: pick(row, "startDate", "start_date") === undefined ? null : String(pick(row, "startDate", "start_date")),
-    endDate: pick(row, "endDate", "end_date") === undefined ? null : String(pick(row, "endDate", "end_date")),
+    startDate:
+      pick(row, "startDate", "start_date") === undefined
+        ? null
+        : String(pick(row, "startDate", "start_date")),
+    endDate:
+      pick(row, "endDate", "end_date") === undefined
+        ? null
+        : String(pick(row, "endDate", "end_date")),
     isActive: toBoolean(pick(row, "isActive", "is_active"), false),
   };
 }
@@ -200,6 +246,10 @@ function normalizePlanCode(code: unknown, name: unknown): PlanCode {
   return "free";
 }
 
+function normalizeCheckoutMode(value: unknown): BillingCheckoutMode {
+  return toStringValue(value).toLowerCase() === "provider" ? "provider" : "mock";
+}
+
 function normalizeLimits(value: unknown, plan: PlanCode): PlanLimits {
   const row = asRecord(value);
   const fallback = DEFAULT_LIMITS[plan];
@@ -207,7 +257,9 @@ function normalizeLimits(value: unknown, plan: PlanCode): PlanLimits {
     branches: toNullableNumber(pick(row, "branches")) ?? fallback.branches,
     promotions: toNullableNumber(pick(row, "promotions")) ?? fallback.promotions,
     media: toNullableNumber(pick(row, "media")) ?? fallback.media,
-    teamMembers: toNullableNumber(pick(row, "teamMembers", "team_members")) ?? fallback.teamMembers,
+    teamMembers:
+      toNullableNumber(pick(row, "teamMembers", "team_members")) ??
+      fallback.teamMembers,
   };
 }
 
@@ -215,13 +267,31 @@ function normalizeFeatures(value: unknown, plan: PlanCode): PlanFeatures {
   const row = asRecord(value);
   const fallback = DEFAULT_FEATURES[plan];
   return {
-    analyticsAdvanced: toBoolean(pick(row, "analyticsAdvanced", "analytics_advanced"), fallback.analyticsAdvanced),
+    analyticsAdvanced: toBoolean(
+      pick(row, "analyticsAdvanced", "analytics_advanced"),
+      fallback.analyticsAdvanced,
+    ),
     promotions: toBoolean(pick(row, "promotions"), fallback.promotions),
-    priorityVerification: toBoolean(pick(row, "priorityVerification", "priority_verification"), fallback.priorityVerification),
-    teamManagement: toBoolean(pick(row, "teamManagement", "team_management"), fallback.teamManagement),
-    billingHistory: toBoolean(pick(row, "billingHistory", "billing_history"), fallback.billingHistory),
-    reviewResponses: toBoolean(pick(row, "reviewResponses", "review_responses"), fallback.reviewResponses),
-    verificationCenter: toBoolean(pick(row, "verificationCenter", "verification_center"), fallback.verificationCenter),
+    priorityVerification: toBoolean(
+      pick(row, "priorityVerification", "priority_verification"),
+      fallback.priorityVerification,
+    ),
+    teamManagement: toBoolean(
+      pick(row, "teamManagement", "team_management"),
+      fallback.teamManagement,
+    ),
+    billingHistory: toBoolean(
+      pick(row, "billingHistory", "billing_history"),
+      fallback.billingHistory,
+    ),
+    reviewResponses: toBoolean(
+      pick(row, "reviewResponses", "review_responses"),
+      fallback.reviewResponses,
+    ),
+    verificationCenter: toBoolean(
+      pick(row, "verificationCenter", "verification_center"),
+      fallback.verificationCenter,
+    ),
   };
 }
 
@@ -240,5 +310,28 @@ function defaultUpgradeTargets(plan: PlanCode): UpgradeTarget[] {
     limits: DEFAULT_LIMITS[target],
     features: DEFAULT_FEATURES[target],
     benefits: [],
+  }));
+}
+
+function defaultPlanOptions(
+  currentPlan: PlanCode,
+  checkoutMode: BillingCheckoutMode,
+): BillingPlanOption[] {
+  const prices: Record<PlanCode, number> = { free: 0, pro: 40, premium: 80 };
+  return (["free", "pro", "premium"] as PlanCode[]).map((plan) => ({
+    planId: null,
+    plan,
+    label: plan === "free" ? "Free" : plan === "pro" ? "Pro" : "Premium",
+    price: prices[plan],
+    currency: "PEN",
+    billingInterval: "month",
+    intervalMonths: 1,
+    providerPriceId: null,
+    recommended: plan === "pro",
+    limits: DEFAULT_LIMITS[plan],
+    features: DEFAULT_FEATURES[plan],
+    benefits: [],
+    isCurrent: plan === currentPlan,
+    checkoutEnabled: false && checkoutMode === "mock",
   }));
 }
