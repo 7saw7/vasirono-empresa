@@ -271,8 +271,8 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
           <form className="space-y-3" onSubmit={submitContact}>
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Tipo ID" type="number" min="1" value={contactForm.contactTypeId} onChange={(event) => setContactForm({ ...contactForm, contactTypeId: event.target.value })} required />
-              <Input label="Valor" value={contactForm.value} onChange={(event) => setContactForm({ ...contactForm, value: event.target.value })} required />
-              <Input label="Etiqueta" value={contactForm.label} onChange={(event) => setContactForm({ ...contactForm, label: event.target.value })} />
+              <Input label="Valor" value={contactForm.value} maxLength={200} onChange={(event) => setContactForm({ ...contactForm, value: event.target.value })} required />
+              <Input label="Etiqueta" value={contactForm.label} maxLength={120} onChange={(event) => setContactForm({ ...contactForm, label: event.target.value })} />
               <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-3 text-sm dark:bg-slate-900/50">
                 <label><input type="checkbox" checked={contactForm.isPrimary} onChange={(event) => setContactForm({ ...contactForm, isPrimary: event.target.checked })} /> Principal</label>
                 <label><input type="checkbox" checked={contactForm.isPublic} onChange={(event) => setContactForm({ ...contactForm, isPublic: event.target.checked })} /> Público</label>
@@ -349,8 +349,8 @@ export function BranchOperationsPanel({ branchId, contacts: initialContacts, sch
               <Input label="Apertura especial" type="time" value={exceptionForm.opening} onChange={(event) => setExceptionForm({ ...exceptionForm, opening: event.target.value })} disabled={exceptionForm.isClosed} required={!exceptionForm.isClosed} />
               <Input label="Cierre especial" type="time" value={exceptionForm.closing} onChange={(event) => setExceptionForm({ ...exceptionForm, closing: event.target.value })} disabled={exceptionForm.isClosed} required={!exceptionForm.isClosed} />
             </div>
-            <Input label="Motivo" value={exceptionForm.reason} onChange={(event) => setExceptionForm({ ...exceptionForm, reason: event.target.value })} />
-            <Textarea label="Notas" rows={2} value={exceptionForm.notes} onChange={(event) => setExceptionForm({ ...exceptionForm, notes: event.target.value })} />
+            <Input label="Motivo" value={exceptionForm.reason} maxLength={150} onChange={(event) => setExceptionForm({ ...exceptionForm, reason: event.target.value })} />
+            <Textarea label="Notas" rows={2} value={exceptionForm.notes} maxLength={500} onChange={(event) => setExceptionForm({ ...exceptionForm, notes: event.target.value })} />
             <div className="flex gap-2"><Button type="submit" size="sm" disabled={busy !== null}>{exceptionForm.exceptionId ? "Guardar excepción" : "Registrar excepción"}</Button>{exceptionForm.exceptionId ? <Button type="button" size="sm" variant="secondary" onClick={() => setExceptionForm(emptyException)}><X className="mr-1 h-4 w-4" />Cancelar</Button> : null}</div>
           </form>
           <div className="mt-4 space-y-2">

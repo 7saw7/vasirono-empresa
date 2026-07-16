@@ -80,6 +80,13 @@ type PendingRedemptionAction = {
   action: RedemptionAction;
 };
 
+const ALLOWED_COVER_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const MAX_COVER_SIZE_BYTES = 8 * 1024 * 1024;
+
 const EMPTY_FORM: FormState = {
   branchId: "",
   title: "",
@@ -243,6 +250,22 @@ export function PromotionsView({
     if (form.title.trim().length < 3) {
       return "El título debe tener al menos 3 caracteres.";
     }
+    if (form.title.trim().length > 120) {
+      return "El título no debe superar 120 caracteres.";
+    }
+    if (form.description.trim().length > 1000) {
+      return "La descripción no debe superar 1000 caracteres.";
+    }
+    if (form.terms.trim().length > 2000) {
+      return "Los términos no deben superar 2000 caracteres.";
+    }
+    if (form.coverUrl.trim()) {
+      try {
+        new URL(form.coverUrl.trim());
+      } catch {
+        return "La URL de portada no es válida.";
+      }
+    }
     if (form.startDate && form.endDate && form.endDate < form.startDate) {
       return "La fecha de fin debe ser igual o posterior a la fecha de inicio.";
     }
@@ -342,11 +365,11 @@ export function PromotionsView({
     setError(null);
     setMessage(null);
 
-    if (!file.type.startsWith("image/")) {
-      setError("Selecciona un archivo de imagen válido.");
+    if (!ALLOWED_COVER_MIME_TYPES.has(file.type)) {
+      setError("La portada debe ser JPG, PNG o WEBP.");
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
+    if (file.size <= 0 || file.size > MAX_COVER_SIZE_BYTES) {
       setError("La portada no puede superar los 8 MB.");
       return;
     }
@@ -839,7 +862,9 @@ function PromotionFormModal({
               value={form.description}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
               placeholder="Explica el beneficio de forma clara y atractiva."
+              maxLength={1000}
               disabled={formBusy}
+              hint={`${form.description.length}/1000 caracteres`}
             />
             <Textarea
               label="Términos y condiciones"
@@ -847,7 +872,9 @@ function PromotionFormModal({
               value={form.terms}
               onChange={(event) => setForm({ ...form, terms: event.target.value })}
               placeholder="Válido de lunes a viernes, no acumulable..."
+              maxLength={2000}
               disabled={formBusy}
+              hint={`${form.terms.length}/2000 caracteres`}
             />
           </div>
 
@@ -881,9 +908,11 @@ function PromotionFormModal({
             </div>
             <Input
               label="URL de portada"
+              type="url"
               value={form.coverUrl}
               onChange={(event) => setForm({ ...form, coverUrl: event.target.value })}
               placeholder="Se completa al subir una imagen"
+              maxLength={2048}
               disabled={formBusy}
             />
           </div>

@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
+import { verificationDocumentUploadFieldsSchema } from "@/features/admin-company/verifications/schema";
 import { getCompanyContext } from "@/lib/auth/company-context";
 import { uploadCompanyVerificationDocumentQuery } from "@/lib/db/queries/admin-company/verifications";
 import { AppError } from "@/lib/errors/app-error";
 import { handleRoute } from "@/lib/http/handle-route";
+import { parseWithSchema } from "@/lib/validation/parse";
 
 export const runtime = "nodejs";
 
@@ -16,21 +18,12 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   return handleRoute(async () => {
-    const { companyId } = await getCompanyContext("viewVerifications");
+    const { companyId } = await getCompanyContext("submitVerification");
     const formData = await request.formData();
     const file = formData.get("file");
-    const documentTypeCode = String(formData.get("documentTypeCode") ?? "").trim();
-    const branchIdRaw = String(formData.get("branchId") ?? "").trim();
 
     if (!(file instanceof File)) {
       throw new AppError("VALIDATION_ERROR", "Selecciona un archivo.", 422);
-    }
-    if (!documentTypeCode || documentTypeCode.length > 50) {
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "Selecciona un tipo de documento válido.",
-        422,
-      );
     }
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
       throw new AppError(
@@ -47,28 +40,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const branchId = branchIdRaw ? Number(branchIdRaw) : null;
-    if (branchId !== null && (!Number.isInteger(branchId) || branchId <= 0)) {
-      throw new AppError("VALIDATION_ERROR", "La sucursal no es válida.", 422);
-    }
+    const fields = parseWithSchema(
+      verificationDocumentUploadFieldsSchema,
+      {
+        documentTypeCode: formData.get("documentTypeCode"),
+        branchId: formData.get("branchId"),
+        notes: formData.get("notes"),
+        extractedAddress: formData.get("extractedAddress"),
+        extractedName: formData.get("extractedName"),
+        extractedDocumentNumber: formData.get("extractedDocumentNumber"),
+        extractedIssueDate: formData.get("extractedIssueDate"),
+      },
+      "Los datos del documento no son válidos.",
+    );
 
     return uploadCompanyVerificationDocumentQuery(companyId, {
       file,
-      documentTypeCode,
-      branchId,
-      notes: nullableFormValue(formData.get("notes")),
-      extractedAddress: nullableFormValue(formData.get("extractedAddress")),
-      extractedName: nullableFormValue(formData.get("extractedName")),
-      extractedDocumentNumber: nullableFormValue(
-        formData.get("extractedDocumentNumber"),
-      ),
-      extractedIssueDate: nullableFormValue(formData.get("extractedIssueDate")),
+      ...fields,
     });
   });
-}
-
-function nullableFormValue(value: FormDataEntryValue | null): string | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.trim();
-  return normalized || null;
 }

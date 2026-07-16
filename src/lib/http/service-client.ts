@@ -70,7 +70,7 @@ export async function serviceRequest<TResponse, TBody = unknown>(
   input: ServiceRequest<TBody>
 ): Promise<TResponse> {
   const token = input.token ?? (await getRawSessionToken());
-  const actorHeaders = await buildServerActorHeaders(input.service, input.companyId);
+  const actorHeaders = await buildServiceActorHeaders(input.service, input.companyId);
   const url = buildServiceUrl(input);
   const method = input.method ?? "GET";
 
@@ -245,7 +245,7 @@ function isGatewayBaseUrl(baseUrl: string): boolean {
 }
 
 
-async function buildServerActorHeaders(
+export async function buildServiceActorHeaders(
   service: ServiceName,
   companyIdOverride?: number | null
 ): Promise<Record<string, string>> {

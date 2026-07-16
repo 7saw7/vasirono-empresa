@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   return handleRoute(async () => {
-    const { companyId } = await getCompanyContext("viewVerifications");
+    const { companyId } = await getCompanyContext("requestVerification");
     const input = parseWithSchema(
       requestVerificationSchema,
       await request.json(),

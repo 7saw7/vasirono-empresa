@@ -1,6 +1,10 @@
-import { getRawSessionToken, getSession } from "@/lib/auth/session";
+import { getRawSessionToken } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors/app-error";
-import { buildServiceUrl, serviceRequest } from "@/lib/http/service-client";
+import {
+  buildServiceActorHeaders,
+  buildServiceUrl,
+  serviceRequest,
+} from "@/lib/http/service-client";
 import {
   asRecord,
   pick,
@@ -134,29 +138,15 @@ export async function uploadCompanyVerificationDocumentQuery(
     gatewayPath: `/api/verifications/api/business/companies/${companyId}/verifications/documents`,
   });
   const token = await getRawSessionToken();
-  const session = await getSession();
+  const actorHeaders = await buildServiceActorHeaders("verifications", companyId);
 
   const response = await fetch(url, {
     method: "POST",
     cache: "no-store",
     headers: {
+      Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(session
-        ? {
-            "x-user-id": session.userId,
-            "x-user-email": session.email,
-            "x-user-role": session.role,
-            "x-role-name": session.role,
-            "x-portal": "company",
-            "x-company-id": String(companyId),
-            "x-company-ids": String(companyId),
-            "x-user-permissions": [
-              "verifications.business.read_own",
-              "verifications.business.request",
-              "verifications.business.submit",
-            ].join(","),
-          }
-        : {}),
+      ...actorHeaders,
     },
     body: formData,
   });
@@ -193,8 +183,17 @@ export async function getCompanyVerificationDocumentViewUrlQuery(
   });
   const row = asRecord(payload);
 
+  const url = toStringValue(pick(row, "url"), "");
+  if (!url) {
+    throw new AppError(
+      "VERIFICATION_DOCUMENT_VIEW_INVALID_RESPONSE",
+      "Verifications Service no devolvió una URL válida para el documento.",
+      502,
+    );
+  }
+
   return {
-    url: toStringValue(pick(row, "url"), ""),
+    url,
     fileName: toStringValue(pick(row, "fileName", "file_name"), "documento"),
     expiresIn: toNumber(pick(row, "expiresIn", "expires_in"), 300),
   };

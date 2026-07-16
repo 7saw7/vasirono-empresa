@@ -73,9 +73,13 @@ const LEVEL_LABELS: Record<string, string> = {
 export function VerificationActionsCard({
   request,
   documents,
+  canRequestVerification,
+  canSubmitVerification,
 }: {
   request: VerificationRequestSummary | null;
   documents: VerificationDocumentItem[];
+  canRequestVerification: boolean;
+  canSubmitVerification: boolean;
 }) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,7 +109,8 @@ export function VerificationActionsCard({
   const isEditable =
     !isLockedForReview &&
     (backendEditable || localRequestStage === "draft");
-  const canStart = backendCanStart && localRequestStage === "none";
+  const canStart =
+    backendCanStart && localRequestStage === "none" && canRequestVerification;
   const requestedLevelLabel =
     localRequestStage === "draft"
       ? LEVEL_LABELS[levelCode]
@@ -121,8 +126,35 @@ export function VerificationActionsCard({
         description:
           "La evidencia ya fue enviada. Aquí podrás seguir el estado, las observaciones y la decisión final.",
         actionLabel: null,
+        actionStatus: "En revisión",
         icon: Lock,
         tone: "info" as const,
+      };
+    }
+
+    if (isEditable && !canSubmitVerification) {
+      return {
+        eyebrow: "Acceso de solo lectura",
+        title: "Hay una solicitud pendiente de completar",
+        description:
+          "Tu rol permite consultar el estado, pero no cargar evidencia ni enviar la solicitud.",
+        actionLabel: null,
+        actionStatus: "Solo lectura",
+        icon: Lock,
+        tone: "default" as const,
+      };
+    }
+
+    if (!isEditable && !canRequestVerification) {
+      return {
+        eyebrow: "Acceso de solo lectura",
+        title: request ? "Consulta el historial de verificación" : "Verificación sin iniciar",
+        description:
+          "Tu rol permite revisar el estado y los documentos, pero no iniciar una nueva solicitud.",
+        actionLabel: null,
+        actionStatus: "Solo lectura",
+        icon: Lock,
+        tone: "default" as const,
       };
     }
 
@@ -159,9 +191,18 @@ export function VerificationActionsCard({
       icon: ShieldCheck,
       tone: "default" as const,
     };
-  }, [isEditable, isLockedForReview, request]);
+  }, [
+    canRequestVerification,
+    canSubmitVerification,
+    isEditable,
+    isLockedForReview,
+    request,
+  ]);
 
   function openFlow() {
+    if (isEditable && !canSubmitVerification) return;
+    if (!isEditable && !canRequestVerification) return;
+
     setError(null);
     setMessage(null);
     setSelectedFile(null);
@@ -189,6 +230,11 @@ export function VerificationActionsCard({
   }
 
   async function createRequest() {
+    if (!canRequestVerification) {
+      setError("No tienes permisos para iniciar una verificación.");
+      return;
+    }
+
     setBusy("request");
     setError(null);
     setMessage(null);
@@ -223,6 +269,11 @@ export function VerificationActionsCard({
   }
 
   async function uploadDocument() {
+    if (!canSubmitVerification) {
+      setError("No tienes permisos para cargar documentos de verificación.");
+      return;
+    }
+
     const file = selectedFile;
     if (!file) {
       setMessage(null);
@@ -264,6 +315,11 @@ export function VerificationActionsCard({
   }
 
   async function submitRequest() {
+    if (!canSubmitVerification) {
+      setError("No tienes permisos para enviar la solicitud a revisión.");
+      return;
+    }
+
     if (flowDocuments.length === 0) {
       setError("Carga al menos un documento antes de enviar la solicitud.");
       setStep("documents");
@@ -354,7 +410,7 @@ export function VerificationActionsCard({
             ) : (
               <div className="flex items-center gap-2 text-sm font-medium text-sky-700 dark:text-sky-300">
                 <Clock3 className="h-4 w-4" />
-                En revisión
+                {"actionStatus" in panel ? panel.actionStatus : "En revisión"}
               </div>
             )}
           </div>
@@ -413,7 +469,11 @@ export function VerificationActionsCard({
                 </Button>
 
                 {step === "level" ? (
-                  <Button type="button" onClick={createRequest} disabled={busy !== null}>
+                  <Button
+                    type="button"
+                    onClick={createRequest}
+                    disabled={busy !== null || !canRequestVerification}
+                  >
                     {busy === "request" ? "Creando solicitud..." : "Crear y continuar"}
                     {busy !== "request" ? <ArrowRight className="ml-2 h-4 w-4" /> : null}
                   </Button>
@@ -427,7 +487,11 @@ export function VerificationActionsCard({
                       setMessage(null);
                       setStep("review");
                     }}
-                    disabled={busy !== null || flowDocuments.length === 0}
+                    disabled={
+                      busy !== null ||
+                      flowDocuments.length === 0 ||
+                      !canSubmitVerification
+                    }
                   >
                     Revisar solicitud
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -435,7 +499,11 @@ export function VerificationActionsCard({
                 ) : null}
 
                 {step === "review" ? (
-                  <Button type="button" onClick={submitRequest} disabled={busy !== null}>
+                  <Button
+                    type="button"
+                    onClick={submitRequest}
+                    disabled={busy !== null || !canSubmitVerification}
+                  >
                     <Send className="mr-2 h-4 w-4" />
                     {busy === "submit" ? "Enviando..." : "Enviar a revisión"}
                   </Button>
@@ -524,7 +592,7 @@ export function VerificationActionsCard({
                 type="button"
                 variant="secondary"
                 onClick={uploadDocument}
-                disabled={!selectedFile || busy !== null}
+                disabled={!selectedFile || busy !== null || !canSubmitVerification}
                 className="w-full sm:w-auto"
               >
                 <UploadCloud className="mr-2 h-4 w-4" />

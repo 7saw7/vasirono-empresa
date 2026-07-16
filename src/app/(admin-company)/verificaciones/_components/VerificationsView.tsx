@@ -10,8 +10,12 @@ import { VerificationTimeline } from "./VerificationTimeline";
 
 export function VerificationsView({
   data,
+  canRequestVerification,
+  canSubmitVerification,
 }: {
   data: CompanyVerificationData;
+  canRequestVerification: boolean;
+  canSubmitVerification: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -21,7 +25,12 @@ export function VerificationsView({
       />
 
       <VerificationStatusCard summary={data.summary} />
-      <VerificationActionsCard request={data.request} documents={data.documents} />
+      <VerificationActionsCard
+        request={data.request}
+        documents={data.documents}
+        canRequestVerification={canRequestVerification}
+        canSubmitVerification={canSubmitVerification}
+      />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <VerificationChecksTable items={data.checks} />

@@ -1,5 +1,10 @@
+import { getRawSessionToken } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors/app-error";
-import { serviceRequest } from "@/lib/http/service-client";
+import {
+  buildServiceActorHeaders,
+  buildServiceUrl,
+  serviceRequest,
+} from "@/lib/http/service-client";
 import {
   asRecord,
   pick,
@@ -166,10 +171,8 @@ export async function uploadPromotionCoverQuery(
   formData.set("file", file);
   formData.set("altText", altText);
 
-  const sessionMod = await import("@/lib/auth/session");
-  const token = await sessionMod.getRawSessionToken();
-  const session = await sessionMod.getSession();
-  const { buildServiceUrl } = await import("@/lib/http/service-client");
+  const token = await getRawSessionToken();
+  const actorHeaders = await buildServiceActorHeaders("media", companyId);
   const url = buildServiceUrl({
     service: "media",
     directPath: "/api/media/promotions/assets",
@@ -180,27 +183,15 @@ export async function uploadPromotionCoverQuery(
     method: "POST",
     cache: "no-store",
     headers: {
+      Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(session
-        ? {
-            "x-user-id": session.userId,
-            "x-user-email": session.email,
-            "x-user-role": session.role,
-            "x-role-name": session.role,
-            "x-user-permissions": [
-              "media:company:write",
-            ].join(","),
-          }
-        : {}),
-      "x-company-id": String(companyId),
-      "x-company-ids": String(companyId),
-      "x-portal": "company",
+      ...actorHeaders,
     },
     body: formData,
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = safeJson(text);
 
   if (!response.ok) {
     const errorRow = asRecord(pick(asRecord(payload), "error"));
@@ -294,15 +285,7 @@ export async function getPromotionGateQuery(companyId: number): Promise<Promotio
   const [currentPlan, verification, promotions] = await Promise.all([
     getCurrentPlanQuery(companyId),
     getCompanyVerificationsQuery(companyId).catch(() => null),
-    listPromotionsQuery(companyId, { page: 1, pageSize: 1, active: true }).catch((): PromotionListResult => ({
-      items: [],
-      pagination: {
-        page: 1,
-        pageSize: 1,
-        total: 0,
-        totalPages: 1,
-      },
-    })),
+    listPromotionsQuery(companyId, { page: 1, pageSize: 1, active: true }),
   ]);
 
   const planAllowsPromotions = Boolean(currentPlan.features.promotions && (currentPlan.promotionLimit === null || currentPlan.promotionLimit > 0));
@@ -369,4 +352,14 @@ function normalizePromotion(row: AnyRecord, fallbackCompanyId: number): Promotio
     maxRedemptions: toNullableNumber(pick(row, "maxRedemptions", "max_redemptions")),
     maxRedemptionsPerUser: toNumber(pick(row, "maxRedemptionsPerUser", "max_redemptions_per_user"), 1),
   };
+}
+
+function safeJson(text: string): unknown {
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
 }

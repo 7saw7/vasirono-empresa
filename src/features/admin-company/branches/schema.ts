@@ -44,7 +44,14 @@ export const upsertBranchSchema = z.object({
   description: z.string().trim().max(500).optional().default(""),
   address: z.string().trim().min(5).max(240),
   phone: z.string().trim().max(40).optional().default(""),
-  email: z.string().trim().email("El correo no tiene un formato válido.").optional().or(z.literal("")).default(""),
+  email: z
+    .string()
+    .trim()
+    .email("El correo no tiene un formato válido.")
+    .max(120, "El correo no debe superar 120 caracteres.")
+    .optional()
+    .or(z.literal(""))
+    .default(""),
   districtId: positiveInt,
   isMain: z.boolean(),
   isActive: z.boolean(),
@@ -52,8 +59,15 @@ export const upsertBranchSchema = z.object({
 
 export const branchContactInputSchema = z.object({
   contactTypeId: positiveInt,
-  value: z.string().trim().min(1, "El valor del contacto es obligatorio.").max(500),
-  label: z.preprocess(toOptionalTrimmedString, z.string().max(100).optional()),
+  value: z
+    .string()
+    .trim()
+    .min(1, "El valor del contacto es obligatorio.")
+    .max(200, "El valor del contacto no debe superar 200 caracteres."),
+  label: z.preprocess(
+    toOptionalTrimmedString,
+    z.string().max(120, "La etiqueta no debe superar 120 caracteres.").optional(),
+  ),
   isPrimary: z.boolean(),
   isPublic: z.boolean(),
 });
