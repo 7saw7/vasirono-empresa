@@ -6,9 +6,19 @@ import { usePathname } from "next/navigation";
 import { Building2, Menu, X } from "lucide-react";
 import { AdminCompanyNav } from "./AdminCompanyNav";
 import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
+import {
+  AdminCompanyPlanBadge,
+  type AdminCompanyPlanBadgeData,
+} from "./AdminCompanyPlanBadge";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function AdminCompanyMobileHeader() {
+type AdminCompanyMobileHeaderProps = {
+  currentPlan: AdminCompanyPlanBadgeData | null;
+};
+
+export function AdminCompanyMobileHeader({
+  currentPlan,
+}: AdminCompanyMobileHeaderProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -50,6 +60,11 @@ export function AdminCompanyMobileHeader() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <AdminCompanyPlanBadge
+              currentPlan={currentPlan}
+              compact
+              className="hidden min-[390px]:inline-flex"
+            />
             <ThemeToggle compact />
 
             <button
@@ -80,24 +95,28 @@ export function AdminCompanyMobileHeader() {
           />
 
           <aside className="relative flex h-full w-[min(88vw,340px)] flex-col border-r border-slate-200 bg-[#f8fafc] shadow-2xl dark:border-slate-800 dark:bg-[#080e14]">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-              <Link
-                href="/dashboard"
-                className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white">
-                  <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
-                </span>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+              <div className="flex min-w-0 items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white">
+                    <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
+                  </span>
 
-                <span className="min-w-0">
-                  <span className="block truncate text-base font-bold text-slate-950 dark:text-white">
-                    Vasirono
+                  <span className="min-w-0">
+                    <span className="block truncate text-base font-bold text-slate-950 dark:text-white">
+                      Vasirono
+                    </span>
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Business panel
+                    </span>
                   </span>
-                  <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Business panel
-                  </span>
-                </span>
-              </Link>
+                </Link>
+
+                <AdminCompanyPlanBadge currentPlan={currentPlan} compact />
+              </div>
 
               <button
                 type="button"

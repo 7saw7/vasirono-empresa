@@ -3,9 +3,14 @@ import { Building2 } from "lucide-react";
 import type { SessionUser } from "@/lib/auth/session";
 import { AdminCompanyNav } from "./AdminCompanyNav";
 import { AdminCompanyLogoutButton } from "./AdminCompanyLogoutButton";
+import {
+  AdminCompanyPlanBadge,
+  type AdminCompanyPlanBadgeData,
+} from "./AdminCompanyPlanBadge";
 
 type AdminCompanySidebarProps = {
   session: SessionUser;
+  currentPlan: AdminCompanyPlanBadgeData | null;
 };
 
 function getInitials(name: string): string {
@@ -19,26 +24,33 @@ function getInitials(name: string): string {
   return initials || "VA";
 }
 
-export function AdminCompanySidebar({ session }: AdminCompanySidebarProps) {
+export function AdminCompanySidebar({
+  session,
+  currentPlan,
+}: AdminCompanySidebarProps) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-[#f8fafc] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col dark:border-slate-800 dark:bg-[#080e14]">
       <div className="flex h-16 items-center border-b border-slate-200 px-5 dark:border-slate-800">
-        <Link
-          href="/dashboard"
-          className="group flex min-w-0 items-center gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-[0_8px_24px_rgba(2,132,199,0.25)] transition-transform group-hover:-translate-y-0.5">
-            <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-lg font-bold tracking-tight text-slate-950 dark:text-white">
-              Vasirono
+        <div className="flex w-full min-w-0 items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/35"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-[0_8px_24px_rgba(2,132,199,0.25)] transition-transform group-hover:-translate-y-0.5">
+              <Building2 className="h-[19px] w-[19px]" aria-hidden="true" />
             </span>
-            <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-              Business panel
+            <span className="min-w-0">
+              <span className="block truncate text-lg font-bold tracking-tight text-slate-950 dark:text-white">
+                Vasirono
+              </span>
+              <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                Business panel
+              </span>
             </span>
-          </span>
-        </Link>
+          </Link>
+
+          <AdminCompanyPlanBadge currentPlan={currentPlan} compact />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-5">
