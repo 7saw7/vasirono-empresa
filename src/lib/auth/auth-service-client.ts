@@ -193,8 +193,40 @@ export async function requestPasswordResetWithAuthService(
   return authServiceFetch<unknown>("/auth/forgot-password", {
     method: "POST",
     headers: buildForwardHeaders(requestHeaders),
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, clientId: "business" }),
   });
+}
+
+export async function verifyPasswordResetTokenWithAuthService(
+  token: string,
+  requestHeaders?: Headers
+): Promise<{ valid: true; clientId: "business"; expiresAt: string }> {
+  return authServiceFetch<{ valid: true; clientId: "business"; expiresAt: string }>(
+    "/auth/verify-reset-token",
+    {
+      method: "POST",
+      headers: buildForwardHeaders(requestHeaders),
+      body: JSON.stringify({ token, clientId: "business" }),
+    }
+  );
+}
+
+export async function confirmPasswordResetWithAuthService(
+  input: { token: string; newPassword: string },
+  requestHeaders?: Headers
+): Promise<{ reset: boolean; revokedSessions: boolean }> {
+  return authServiceFetch<{ reset: boolean; revokedSessions: boolean }>(
+    "/auth/reset-password",
+    {
+      method: "POST",
+      headers: buildForwardHeaders(requestHeaders),
+      body: JSON.stringify({
+        token: input.token,
+        clientId: "business",
+        newPassword: input.newPassword,
+      }),
+    }
+  );
 }
 
 async function authServiceFetch<T>(

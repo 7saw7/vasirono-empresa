@@ -72,8 +72,8 @@ export function RecoverPasswordView() {
                   </h1>
                   <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
                     Ingresa el correo asociado a tu cuenta empresarial. Si
-                    existe una cuenta válida, recibirás las instrucciones para
-                    continuar.
+                    existe una cuenta válida, recibirás un enlace personal y de
+                    un solo uso para continuar.
                   </p>
 
                   <form onSubmit={onSubmit} className="mt-8 space-y-5">
@@ -112,7 +112,7 @@ export function RecoverPasswordView() {
                       >
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                         <p className="leading-5">
-                          Si el correo existe, recibirás instrucciones para
+                          Si el correo existe, recibirás un enlace seguro para
                           recuperar tu acceso.
                         </p>
                       </div>
@@ -137,10 +137,10 @@ export function RecoverPasswordView() {
                       {loading ? (
                         <>
                           <LoaderCircle className="h-4 w-4 animate-spin" />
-                          Enviando instrucciones...
+                          Enviando enlace...
                         </>
                       ) : (
-                        "Enviar instrucciones"
+                        "Enviar enlace seguro"
                       )}
                     </button>
                   </form>

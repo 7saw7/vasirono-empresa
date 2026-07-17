@@ -5,6 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: ["/api/", "/login", "/recuperar-clave"],
     },
     sitemap: "https://codevastudio.com/sitemap.xml",
   };

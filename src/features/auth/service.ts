@@ -70,6 +70,35 @@ export async function recoverPasswordService(email: string): Promise<void> {
   }
 }
 
+export async function verifyPasswordResetTokenService(token: string): Promise<void> {
+  const response = await fetch("/api/auth/recover-password/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.error?.message || "El enlace no es válido o expiró.");
+  }
+}
+
+export async function confirmPasswordResetService(input: {
+  token: string;
+  newPassword: string;
+}): Promise<void> {
+  const response = await fetch("/api/auth/recover-password/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.error?.message || "No se pudo cambiar la contraseña.");
+  }
+}
+
 
 export class ClientApiError extends Error {
   constructor(

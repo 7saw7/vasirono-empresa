@@ -25,8 +25,29 @@ export const recoverPasswordSchema = z.object({
     .transform((value) => value.toLowerCase()),
 });
 
+export const passwordResetTokenSchema = z.object({
+  token: z
+    .string()
+    .trim()
+    .min(43, "El enlace de recuperación no es válido.")
+    .max(256, "El enlace de recuperación no es válido.")
+    .regex(/^[A-Za-z0-9_-]+$/, "El enlace de recuperación no es válido."),
+});
+
+export const confirmPasswordResetSchema = passwordResetTokenSchema.extend({
+  newPassword: z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres.")
+    .max(128, "La contraseña no debe superar los 128 caracteres.")
+    .regex(/[a-z]/, "La contraseña debe incluir una minúscula.")
+    .regex(/[A-Z]/, "La contraseña debe incluir una mayúscula.")
+    .regex(/[0-9]/, "La contraseña debe incluir un número."),
+});
+
 export type LoginSchema = z.infer<typeof loginSchema>;
 export type RecoverPasswordSchema = z.infer<typeof recoverPasswordSchema>;
+export type PasswordResetTokenSchema = z.infer<typeof passwordResetTokenSchema>;
+export type ConfirmPasswordResetSchema = z.infer<typeof confirmPasswordResetSchema>;
 
 const businessInvitationTokenSchema = z
   .string()
