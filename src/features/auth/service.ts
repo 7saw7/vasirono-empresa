@@ -70,21 +70,25 @@ export async function recoverPasswordService(email: string): Promise<void> {
   }
 }
 
-export async function verifyPasswordResetTokenService(token: string): Promise<void> {
+export async function verifyPasswordResetCodeService(input: {
+  email: string;
+  code: string;
+}): Promise<void> {
   const response = await fetch("/api/auth/recover-password/verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify(input),
   });
   const payload = await response.json();
 
   if (!response.ok || !payload?.success) {
-    throw new Error(payload?.error?.message || "El enlace no es válido o expiró.");
+    throw new Error(payload?.error?.message || "El código no es válido o expiró.");
   }
 }
 
 export async function confirmPasswordResetService(input: {
-  token: string;
+  email: string;
+  code: string;
   newPassword: string;
 }): Promise<void> {
   const response = await fetch("/api/auth/recover-password/confirm", {

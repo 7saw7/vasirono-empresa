@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { SessionUser } from "@/lib/auth/session";
 import type { AdminCompanyPlanBadgeData } from "./AdminCompanyPlanBadge";
+import { SessionRefreshManager } from "@/components/auth/SessionRefreshManager";
 import { AdminCompanyMobileHeader } from "./AdminCompanyMobileHeader";
 import { AdminCompanySidebar } from "./AdminCompanySidebar";
 import { AdminCompanyTopbar } from "./AdminCompanyTopbar";
@@ -18,6 +19,10 @@ export default function AdminCompanyShell({
 }: AdminCompanyShellProps) {
   return (
     <div className="admin-company-shell min-h-screen bg-[#f4f7fa] text-slate-950 dark:bg-[#091017] dark:text-slate-100">
+      <SessionRefreshManager
+        sessionId={session.sessionId}
+        expiresAt={session.expiresAt}
+      />
       <AdminCompanyMobileHeader currentPlan={currentPlan} />
 
       <div className="flex min-h-screen w-full">

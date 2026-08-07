@@ -15,6 +15,7 @@ import { recoverPasswordService } from "@/features/auth/service";
 
 export function RecoverPasswordView() {
   const [email, setEmail] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export function RecoverPasswordView() {
 
     try {
       await recoverPasswordService(email);
+      setSubmittedEmail(email.trim().toLowerCase());
       setSubmitted(true);
     } catch (err) {
       setError(
@@ -72,8 +74,8 @@ export function RecoverPasswordView() {
                   </h1>
                   <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
                     Ingresa el correo asociado a tu cuenta empresarial. Si
-                    existe una cuenta válida, recibirás un enlace personal y de
-                    un solo uso para continuar.
+                    existe una cuenta válida, recibirás un código de 6 dígitos
+                    para continuar.
                   </p>
 
                   <form onSubmit={onSubmit} className="mt-8 space-y-5">
@@ -112,10 +114,19 @@ export function RecoverPasswordView() {
                       >
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                         <p className="leading-5">
-                          Si el correo existe, recibirás un enlace seguro para
-                          recuperar tu acceso.
+                          Si el correo existe, recibirás un código de recuperación.
+                          Revisa también la carpeta de spam.
                         </p>
                       </div>
+                    ) : null}
+
+                    {submitted ? (
+                      <Link
+                        href={`/recuperar-clave/confirmar?email=${encodeURIComponent(submittedEmail)}`}
+                        className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/35 dark:border-blue-500/25 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
+                      >
+                        Ingresar código de recuperación
+                      </Link>
                     ) : null}
 
                     {error ? (
@@ -137,10 +148,10 @@ export function RecoverPasswordView() {
                       {loading ? (
                         <>
                           <LoaderCircle className="h-4 w-4 animate-spin" />
-                          Enviando enlace...
+                          Enviando código...
                         </>
                       ) : (
-                        "Enviar enlace seguro"
+                        "Enviar código"
                       )}
                     </button>
                   </form>

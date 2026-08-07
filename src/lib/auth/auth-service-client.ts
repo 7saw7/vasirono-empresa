@@ -197,22 +197,22 @@ export async function requestPasswordResetWithAuthService(
   });
 }
 
-export async function verifyPasswordResetTokenWithAuthService(
-  token: string,
+export async function verifyPasswordResetCodeWithAuthService(
+  input: { email: string; code: string },
   requestHeaders?: Headers
-): Promise<{ valid: true; clientId: "business"; expiresAt: string }> {
-  return authServiceFetch<{ valid: true; clientId: "business"; expiresAt: string }>(
-    "/auth/verify-reset-token",
+): Promise<{ valid: boolean }> {
+  return authServiceFetch<{ valid: boolean }>(
+    "/auth/verify-reset-code",
     {
       method: "POST",
       headers: buildForwardHeaders(requestHeaders),
-      body: JSON.stringify({ token, clientId: "business" }),
+      body: JSON.stringify(input),
     }
   );
 }
 
 export async function confirmPasswordResetWithAuthService(
-  input: { token: string; newPassword: string },
+  input: { email: string; code: string; newPassword: string },
   requestHeaders?: Headers
 ): Promise<{ reset: boolean; revokedSessions: boolean }> {
   return authServiceFetch<{ reset: boolean; revokedSessions: boolean }>(
@@ -220,11 +220,7 @@ export async function confirmPasswordResetWithAuthService(
     {
       method: "POST",
       headers: buildForwardHeaders(requestHeaders),
-      body: JSON.stringify({
-        token: input.token,
-        clientId: "business",
-        newPassword: input.newPassword,
-      }),
+      body: JSON.stringify(input),
     }
   );
 }

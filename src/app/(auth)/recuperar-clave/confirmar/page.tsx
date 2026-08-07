@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams?: Promise<{ token?: string }>;
+  searchParams?: Promise<{ email?: string }>;
 };
 
 export default async function ConfirmPasswordResetPage({ searchParams }: Props) {
   const params = await searchParams;
-  const token = typeof params?.token === "string" ? params.token : "";
-  return <ConfirmPasswordResetView token={token} />;
+  const email = typeof params?.email === "string" ? params.email : "";
+  return <ConfirmPasswordResetView initialEmail={email} />;
 }

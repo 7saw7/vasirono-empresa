@@ -3,6 +3,7 @@ import { AppError } from "@/lib/errors/app-error";
 import type { AppRole } from "@/lib/constants/roles";
 import {
   getCurrentSessionFromAuthService,
+  refreshSessionWithAuthService,
   type AuthServiceLoginResult,
 } from "@/lib/auth/auth-service-client";
 
@@ -74,6 +75,54 @@ export async function requireSession(): Promise<SessionUser> {
   }
 
   return session;
+}
+
+export async function refreshCurrentSession(
+  requestHeaders?: Headers
+): Promise<SessionUser> {
+  const refreshToken = await getRawRefreshToken();
+
+  if (!refreshToken) {
+    throw new AppError(
+      "REFRESH_TOKEN_MISSING",
+      "La sesión no se puede renovar.",
+      401
+    );
+  }
+
+  try {
+    const result = await refreshSessionWithAuthService({
+      refreshToken,
+      requestHeaders,
+    });
+    const companyId = resolvePrincipalCompanyId(result.principal);
+
+    if (!companyId) {
+      throw new AppError(
+        "COMPANY_MEMBERSHIP_REQUIRED",
+        "La cuenta no tiene una empresa activa.",
+        403
+      );
+    }
+
+    await setAuthServiceSessionCookies(result);
+
+    return {
+      userId: result.principal.user.id,
+      name: result.principal.user.name,
+      email: result.principal.user.email,
+      companyId,
+      role: result.principal.activeRole,
+      sessionId: result.session.sessionId,
+      expiresAt: result.session.expiresAt,
+    };
+  } catch (error) {
+    if (error instanceof AppError && error.status < 500) {
+      await clearSessionCookie().catch(() => undefined);
+    }
+
+    throw error;
+  }
 }
 
 export async function getRawSessionToken(): Promise<string | null> {
