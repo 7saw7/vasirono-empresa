@@ -70,8 +70,11 @@ export async function serviceRequest<TResponse, TBody = unknown>(
   input: ServiceRequest<TBody>
 ): Promise<TResponse> {
   const token = input.token ?? (await getRawSessionToken());
-  const actorHeaders = await buildServiceActorHeaders(input.service, input.companyId);
-  const url = buildServiceUrl(input);
+  const target = resolveServiceTarget(input.service);
+  const actorHeaders = target.viaGateway
+    ? {}
+    : await buildServiceActorHeaders(input.service, input.companyId);
+  const url = buildServiceUrl(input, target);
   const method = input.method ?? "GET";
 
   const response = await fetch(url, {
@@ -199,12 +202,17 @@ export async function serviceRequestOptional<TResponse, TBody = unknown>(
   }
 }
 
+type ServiceTarget = {
+  baseUrl: string;
+  viaGateway: boolean;
+};
+
 export function buildServiceUrl(
-  input: Pick<ServiceRequest, "service" | "directPath" | "gatewayPath" | "query">
+  input: Pick<ServiceRequest, "service" | "directPath" | "gatewayPath" | "query">,
+  target: ServiceTarget = resolveServiceTarget(input.service)
 ): string {
-  const baseUrl = resolveServiceBaseUrl(input.service);
-  const normalizedBase = baseUrl.replace(/\/+$/, "");
-  const path = isGatewayBaseUrl(normalizedBase)
+  const normalizedBase = target.baseUrl.replace(/\/+$/, "");
+  const path = target.viaGateway
     ? input.gatewayPath ?? input.directPath
     : input.directPath;
 
@@ -220,28 +228,28 @@ export function buildServiceUrl(
 }
 
 export function resolveServiceBaseUrl(service: ServiceName): string {
-  for (const key of SERVICE_ENV_KEYS[service]) {
-    const value = process.env[key]?.trim();
+  return resolveServiceTarget(service).baseUrl;
+}
 
-    if (value) return value;
-  }
-
-  return (
+export function resolveServiceTarget(service: ServiceName): ServiceTarget {
+  const gatewayUrl =
     process.env.API_GATEWAY_URL?.trim() ||
     process.env.NEXT_PUBLIC_API_URL?.trim() ||
     process.env.VASIRONO_API_URL?.trim() ||
-    DEFAULT_GATEWAY_URL
-  );
-}
+    DEFAULT_GATEWAY_URL;
 
-function isGatewayBaseUrl(baseUrl: string): boolean {
-  const value = baseUrl.toLowerCase();
+  const directCallsEnabled =
+    process.env.NODE_ENV !== "production" &&
+    process.env.ALLOW_DIRECT_SERVICE_CALLS === "true";
 
-  return (
-    value.includes("api.vasirono.com") ||
-    value.includes("origin-gw.vasirono.com") ||
-    value === process.env.API_GATEWAY_URL?.replace(/\/+$/, "").toLowerCase()
-  );
+  if (directCallsEnabled) {
+    for (const key of SERVICE_ENV_KEYS[service]) {
+      const value = process.env[key]?.trim();
+      if (value) return { baseUrl: value, viaGateway: false };
+    }
+  }
+
+  return { baseUrl: gatewayUrl, viaGateway: true };
 }
 
 
