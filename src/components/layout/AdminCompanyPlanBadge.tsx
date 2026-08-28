@@ -30,14 +30,32 @@ const PLAN_PRESENTATION: Record<
     className:
       "border-slate-200 bg-slate-100 text-slate-600 hover:border-slate-300 hover:bg-slate-200/80 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700",
   },
+  esencial: {
+    label: "Esencial",
+    icon: BadgeCheck,
+    className:
+      "border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/55 dark:text-violet-300",
+  },
   pro: {
     label: "Pro",
     icon: Sparkles,
     className:
       "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/55 dark:text-sky-300 dark:hover:border-sky-700 dark:hover:bg-sky-900/60",
   },
+  impulso: {
+    label: "Impulso",
+    icon: Sparkles,
+    className:
+      "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/55 dark:text-sky-300 dark:hover:border-sky-700 dark:hover:bg-sky-900/60",
+  },
   premium: {
     label: "Premium",
+    icon: Crown,
+    className:
+      "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:border-amber-700 dark:hover:bg-amber-900/55",
+  },
+  estrategico: {
+    label: "Estratégico",
     icon: Crown,
     className:
       "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:border-amber-700 dark:hover:bg-amber-900/55",

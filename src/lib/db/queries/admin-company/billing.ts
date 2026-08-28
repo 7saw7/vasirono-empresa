@@ -26,14 +26,26 @@ import type {
 
 const DEFAULT_LIMITS: Record<PlanCode, PlanLimits> = {
   free: { branches: 1, promotions: 0, media: 3, teamMembers: 1 },
+  esencial: { branches: 1, promotions: 3, media: 10, teamMembers: 1 },
   pro: { branches: 5, promotions: 10, media: 30, teamMembers: 3 },
+  impulso: { branches: 5, promotions: 10, media: 30, teamMembers: 3 },
   premium: { branches: 20, promotions: 25, media: 100, teamMembers: 10 },
+  estrategico: { branches: 20, promotions: 25, media: 100, teamMembers: 10 },
 };
 
 const DEFAULT_FEATURES: Record<PlanCode, PlanFeatures> = {
   free: {
     analyticsAdvanced: false,
     promotions: false,
+    priorityVerification: false,
+    teamManagement: false,
+    billingHistory: true,
+    reviewResponses: true,
+    verificationCenter: true,
+  },
+  esencial: {
+    analyticsAdvanced: false,
+    promotions: true,
     priorityVerification: false,
     teamManagement: false,
     billingHistory: true,
@@ -49,7 +61,25 @@ const DEFAULT_FEATURES: Record<PlanCode, PlanFeatures> = {
     reviewResponses: true,
     verificationCenter: true,
   },
+  impulso: {
+    analyticsAdvanced: true,
+    promotions: true,
+    priorityVerification: false,
+    teamManagement: true,
+    billingHistory: true,
+    reviewResponses: true,
+    verificationCenter: true,
+  },
   premium: {
+    analyticsAdvanced: true,
+    promotions: true,
+    priorityVerification: true,
+    teamManagement: true,
+    billingHistory: true,
+    reviewResponses: true,
+    verificationCenter: true,
+  },
+  estrategico: {
     analyticsAdvanced: true,
     promotions: true,
     priorityVerification: true,
@@ -241,8 +271,11 @@ function normalizeSubscription(row: AnyRecord): SubscriptionHistoryItem {
 
 function normalizePlanCode(code: unknown, name: unknown): PlanCode {
   const raw = `${toStringValue(code)} ${toStringValue(name)}`.toLowerCase();
-  if (raw.includes("premium") || raw.includes("enterprise")) return "premium";
-  if (raw.includes("pro")) return "pro";
+  if (raw.includes("estrateg") || raw.includes("premium") || raw.includes("enterprise")) {
+    return "estrategico";
+  }
+  if (raw.includes("impulso") || raw.includes("pro")) return "impulso";
+  if (raw.includes("esencial")) return "esencial";
   return "free";
 }
 
@@ -301,12 +334,26 @@ function normalizeStringList(value: unknown): string[] {
 }
 
 function defaultUpgradeTargets(plan: PlanCode): UpgradeTarget[] {
-  const order: PlanCode[] = ["free", "pro", "premium"];
-  const currentIndex = order.indexOf(plan);
+  const order: PlanCode[] = ["esencial", "impulso", "estrategico"];
+  const labels: Record<PlanCode, string> = {
+    free: "Free",
+    esencial: "Esencial",
+    pro: "Pro",
+    impulso: "Impulso",
+    premium: "Premium",
+    estrategico: "Estratégico",
+  };
+  const canonical =
+    plan === "pro"
+      ? "impulso"
+      : plan === "premium"
+        ? "estrategico"
+        : plan;
+  const currentIndex = order.indexOf(canonical);
   return order.slice(currentIndex + 1).map((target) => ({
     plan: target,
-    label: target === "pro" ? "Pro" : "Premium",
-    recommended: target === "pro",
+    label: labels[target],
+    recommended: target === "impulso",
     limits: DEFAULT_LIMITS[target],
     features: DEFAULT_FEATURES[target],
     benefits: [],
@@ -317,21 +364,40 @@ function defaultPlanOptions(
   currentPlan: PlanCode,
   checkoutMode: BillingCheckoutMode,
 ): BillingPlanOption[] {
-  const prices: Record<PlanCode, number> = { free: 0, pro: 40, premium: 80 };
-  return (["free", "pro", "premium"] as PlanCode[]).map((plan) => ({
+  const prices: Record<PlanCode, number> = {
+    free: 0,
+    esencial: 60,
+    pro: 70,
+    impulso: 70,
+    premium: 85,
+    estrategico: 85,
+  };
+  const labels: Record<PlanCode, string> = {
+    free: "Free",
+    esencial: "Esencial",
+    pro: "Pro",
+    impulso: "Impulso",
+    premium: "Premium",
+    estrategico: "Estratégico",
+  };
+
+  return (["esencial", "impulso", "estrategico"] as PlanCode[]).map((plan) => ({
     planId: null,
     plan,
-    label: plan === "free" ? "Free" : plan === "pro" ? "Pro" : "Premium",
+    label: labels[plan],
     price: prices[plan],
     currency: "PEN",
     billingInterval: "month",
     intervalMonths: 1,
     providerPriceId: null,
-    recommended: plan === "pro",
+    recommended: plan === "impulso",
     limits: DEFAULT_LIMITS[plan],
     features: DEFAULT_FEATURES[plan],
     benefits: [],
-    isCurrent: plan === currentPlan,
-    checkoutEnabled: false && checkoutMode === "mock",
+    isCurrent:
+      plan === currentPlan ||
+      (plan === "impulso" && currentPlan === "pro") ||
+      (plan === "estrategico" && currentPlan === "premium"),
+    checkoutEnabled: checkoutMode === "mock",
   }));
 }

@@ -42,6 +42,7 @@ type BillingViewProps = {
 export function BillingView({ data, canChangePlan }: BillingViewProps) {
   const router = useRouter();
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [promotionCode, setPromotionCode] = useState("");
   const [feedback, setFeedback] = useState<
     { tone: "success" | "error"; message: string } | null
   >(null);
@@ -66,6 +67,9 @@ export function BillingView({ data, canChangePlan }: BillingViewProps) {
         body: JSON.stringify({
           planCode: target.plan,
           idempotencyKey: createIdempotencyKey(target.plan),
+          ...(promotionCode.trim()
+            ? { promotionCode: promotionCode.trim().toUpperCase() }
+            : {}),
         }),
       });
       const payload = await response.json();
@@ -138,6 +142,8 @@ export function BillingView({ data, canChangePlan }: BillingViewProps) {
         currentPlan={data.currentPlan}
         canChangePlan={canChangePlan}
         pendingPlan={pendingPlan}
+        promotionCode={promotionCode}
+        onPromotionCodeChange={setPromotionCode}
         feedback={feedback}
         onChangePlan={changePlan}
       />
@@ -279,6 +285,8 @@ function PlanSelector({
   currentPlan,
   canChangePlan,
   pendingPlan,
+  promotionCode,
+  onPromotionCodeChange,
   feedback,
   onChangePlan,
 }: {
@@ -286,6 +294,8 @@ function PlanSelector({
   currentPlan: CurrentPlan;
   canChangePlan: boolean;
   pendingPlan: string | null;
+  promotionCode: string;
+  onPromotionCodeChange: (value: string) => void;
   feedback: { tone: "success" | "error"; message: string } | null;
   onChangePlan: (target: BillingPlanOption) => Promise<void>;
 }) {
@@ -299,6 +309,22 @@ function PlanSelector({
           Puedes consultar el plan, pero solo el propietario de la empresa puede cambiarlo.
         </div>
       ) : null}
+
+      <div className="mb-4">
+        <label htmlFor="promotion-code" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          Código comercial (opcional)
+        </label>
+        <input
+          id="promotion-code"
+          value={promotionCode}
+          onChange={(event) => onPromotionCodeChange(event.target.value)}
+          placeholder="FOUNDERS_LAUNCH_2026"
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        />
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Aplica solo a invitaciones comerciales (p. ej. cohorte fundadores en plan Impulso).
+        </p>
+      </div>
 
       {feedback ? (
         <div

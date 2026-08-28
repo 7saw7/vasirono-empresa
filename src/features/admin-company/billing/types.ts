@@ -1,4 +1,11 @@
-export type PlanCode = "free" | "pro" | "premium";
+export type PlanCode =
+  | "free"
+  | "esencial"
+  | "pro"
+  | "impulso"
+  | "premium"
+  | "estrategico";
+
 export type BillingCheckoutMode = "mock" | "provider";
 
 export type PlanLimits = {
@@ -86,6 +93,7 @@ export type BillingOverview = {
 export type UpgradeCheckoutInput = {
   planCode: PlanCode;
   idempotencyKey: string;
+  promotionCode?: string;
 };
 
 export type UpgradeCheckoutResult = {
